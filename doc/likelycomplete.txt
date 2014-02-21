@@ -1,0 +1,136 @@
+*likelycomplete.txt*  Collect words for completion
+                      Author: Tom Link, micathom at gmail com
+
+Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
+plugin observes any files you edit. It collects the words, ranks them 
+based on the probability of their occurrences (sort of) and compiles a 
+word list that is fed to 'complete'. This way any words that are 
+sufficiently frequently used in files of an enabled filetype, should be 
+offered in the completion list (see |i_CTRL-P|).
+
+
+
+-----------------------------------------------------------------------
+Install~
+
+In order to install the vba, open the vba file in VIM and type: >
+
+    :so %
+
+See :help vimball for details.
+
+This script requires tlib (vimscript #1863) to be installed.
+
+Also available via git: http://github.com/tomtom/likelycomplete_vim/
+
+
+Post-Install~
+
+See |g:likelycomplete_filetypes| for how to enable LikelyComplete for a 
+certain filetype.
+
+
+========================================================================
+Contents~
+
+        g:likelycomplete_filetypes ........ |g:likelycomplete_filetypes|
+        g:likelycomplete_data_cfile ....... |g:likelycomplete_data_cfile|
+        g:likelycomplete_data ............. |g:likelycomplete_data|
+        LikelycompleteSetupFiletype ....... |LikelycompleteSetupFiletype()|
+        :Likelycomplete ................... |:Likelycomplete|
+        g:likelycomplete#maxsize .......... |g:likelycomplete#maxsize|
+        g:likelycomplete#word_minlength ... |g:likelycomplete#word_minlength|
+        g:likelycomplete#base ............. |g:likelycomplete#base|
+        g:likelycomplete#max .............. |g:likelycomplete#max|
+        likelycomplete#SetupFiletype ...... |likelycomplete#SetupFiletype()|
+        likelycomplete#String2Args ........ |likelycomplete#String2Args()|
+        likelycomplete#SetupBuffer ........ |likelycomplete#SetupBuffer()|
+        likelycomplete#Config ............. |likelycomplete#Config()|
+        likelycomplete#EnsureFiletype ..... |likelycomplete#EnsureFiletype()|
+        likelycomplete#RemoveFiletype ..... |likelycomplete#RemoveFiletype()|
+        likelycomplete#SaveFiletypes ...... |likelycomplete#SaveFiletypes()|
+
+
+========================================================================
+plugin/likelycomplete.vim~
+
+                                                    *g:likelycomplete_filetypes*
+g:likelycomplete_filetypes     (default: [])
+    Filetypes that are always enabled.
+
+    LikelyComplete has to be explicitly enabled once per filetype. 
+    Either by using this variable or by calling |:Likelycomplete|.
+
+    Once enabled, it isn't sufficient to remove the filetype name from 
+    this variable. You have to call |likelycomplete#RemoveFiletype()| 
+    to fully remove support for this filetype.
+
+                                                    *g:likelycomplete_data_cfile*
+g:likelycomplete_data_cfile    (default: tlib#persistent#Filename('likelycomplete', 'data', 1))
+
+                                                    *g:likelycomplete_data*
+g:likelycomplete_data          (default: tlib#persistent#Get(g:likelycomplete_data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}}))
+
+                                                    *LikelycompleteSetupFiletype()*
+LikelycompleteSetupFiletype(filetype)
+
+                                                    *:Likelycomplete*
+:Likelycomplete [NAME=VALUE ...]
+    The following arguments are supported:
+      maxsize ......... filetype-specific value for 
+                        |g:likelycomplete#maxsize|
+      keyword_rx ...... Alternative |regexp| for |\k|
+      strip_comments .. Remove whole-line comments (not supported for all filetypes)
+      strip_strings ... Remove strings
+      strip_numbers ... Remove numbers
+      strip_rx ........ Remove matching text from lines
+      exclude_lines_rx .. Exclude lines matching this |regexp|
+
+
+========================================================================
+autoload/likelycomplete.vim~
+
+                                                    *g:likelycomplete#maxsize*
+g:likelycomplete#maxsize       (default: 1000)
+    The maximum number of words kept per filetype.
+
+                                                    *g:likelycomplete#word_minlength*
+g:likelycomplete#word_minlength (default: 3)
+    Minimum length of words.
+
+                                                    *g:likelycomplete#base*
+g:likelycomplete#base          (default: 50)
+    The base number of observations.
+    Also the number of files, you can edit without removing a word 
+    that was't included in any of these files.
+    If this value is too low, new words won't get a chance to be 
+    included in the list.
+
+                                                    *g:likelycomplete#max*
+g:likelycomplete#max           (default: 100)
+    The maximum number of observations taken into account.
+
+                                                    *likelycomplete#SetupFiletype()*
+likelycomplete#SetupFiletype(filetype, options)
+
+                                                    *likelycomplete#String2Args()*
+likelycomplete#String2Args(string)
+
+                                                    *likelycomplete#SetupBuffer()*
+likelycomplete#SetupBuffer(filetype, bufnr)
+
+                                                    *likelycomplete#Config()*
+likelycomplete#Config(filetype, options)
+
+                                                    *likelycomplete#EnsureFiletype()*
+likelycomplete#EnsureFiletype(filetype)
+
+                                                    *likelycomplete#RemoveFiletype()*
+likelycomplete#RemoveFiletype(filetype)
+
+                                                    *likelycomplete#SaveFiletypes()*
+likelycomplete#SaveFiletypes()
+
+
+
+vim:tw=78:fo=tcq2:isk=!-~,^*,^|,^":ts=8:ft=help:norl:
