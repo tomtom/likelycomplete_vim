@@ -1,0 +1,18 @@
+Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
+plugin observes any files you edit. It collects the words, ranks them 
+based on the probability of their occurrences (sort of) and compiles a 
+word list that is fed to 'complete'. This way any words that are 
+sufficiently frequently used in files of an enabled filetype, should be 
+offered in the completion list (see |i_CTRL-P|).
+
+
+
+-----------------------------------------------------------------------
+
+Status:  Experimental
+Dependencies:
+  tlib :: http://github.com/tomtom/tlib_vim
+      > git clone git://github.com/tomtom/tlib_vim.git
+Install: See http://github.com/tomtom/vimtlib/blob/master/INSTALL.TXT
+See http://github.com/tomtom for related plugins.
+
