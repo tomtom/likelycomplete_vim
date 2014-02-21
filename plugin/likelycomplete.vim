@@ -2,16 +2,9 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    45
+" @Revision:    46
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
-if !exists('g:loaded_tlib') || g:loaded_tlib < 107
-    runtime plugin/02tlib.vim
-    if !exists('g:loaded_tlib') || g:loaded_tlib < 107
-        echoerr 'tlib >= 1.07 is required'
-        finish
-    endif
-endif
 if &cp || exists("loaded_likelycomplete")
     finish
 endif

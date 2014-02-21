@@ -1,6 +1,15 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    133
+" @Revision:    134
+
+
+if !exists('g:loaded_tlib') || g:loaded_tlib < 107
+    runtime plugin/02tlib.vim
+    if !exists('g:loaded_tlib') || g:loaded_tlib < 107
+        echoerr 'tlib >= 1.07 is required'
+        finish
+    endif
+endif
 
 
 if !exists('g:likelycomplete#data_cfile')
