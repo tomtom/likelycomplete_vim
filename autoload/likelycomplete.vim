@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    134
+" @Revision:    145
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -18,6 +18,20 @@ endif
 
 
 let g:likelycomplete#data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})   "{{{2
+
+
+if !exists('g:likelycomplete#options_vim')
+    " Some custom options for the vim filetype.
+    " Anything following a single or double quote is removed. This will 
+    " make sure that all strings an comments are removed -- at the cost 
+    " of also removing eligible identifiers following a string.
+    " :read: let g:likelycomplete#options_vim = {...}   "{{{2
+    let g:likelycomplete#options_vim = {
+                \ 'strip_rx': '["''].*$',
+                \ 'strip_strings': 0,
+                \ 'strip_comments': 0,
+                \ }
+endif
 
 
 if !exists('g:likelycomplete#maxsize')
@@ -153,8 +167,8 @@ endf
 function! s:FtOptions(filetype) "{{{3
     let ft_options = get(g:likelycomplete#data.ft_options, a:filetype, {})
     " TLogVAR 1, ft_options
-    if exists('g:likelycomplete_options_'. a:filetype)
-        call extend(ft_options, g:likelycomplete_options_{a:filetype})
+    if exists('g:likelycomplete#options_'. a:filetype)
+        call extend(ft_options, g:likelycomplete#options_{a:filetype})
     endif
     " TLogVAR 2, ft_options
     return ft_options
@@ -182,7 +196,7 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     let strip_rx = get(ft_options, 'strip_rx', '')
     " TLogVAR strip_rx
     if !empty(strip_rx)
-        let lines = filter(lines, 'substitute(v:val, strip_rx, "", "g")')
+        let lines = map(lines, 'substitute(v:val, strip_rx, " ", "g")')
         " TLogVAR 3, len(lines)
     endif
     if get(ft_options, 'strip_comments', 1) && has_key(ft_options, 'cms')
