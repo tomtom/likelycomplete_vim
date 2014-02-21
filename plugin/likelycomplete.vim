@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    42
+" @Revision:    45
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -22,24 +22,15 @@ set cpo&vim
 
 
 if !exists('g:likelycomplete_filetypes')
-    " Filetypes that are always enabled.
+    " A list of filetypes for which LikelyComplete is automatically 
+    " enabled.
     "
-    " LikelyComplete has to be explicitly enabled once per filetype. 
-    " Either by using this variable or by calling |:Likelycomplete|.
-    "
-    " Once enabled, it isn't sufficient to remove the filetype name from 
-    " this variable. You have to call |likelycomplete#RemoveFiletype()| 
-    " to fully remove support for this filetype.
+    " If you want to permanently disable LikelyComplete for a filetype, 
+    " it isn't sufficient to remove the filetype name from this 
+    " variable. You should also call |likelycomplete#RemoveFiletype()| 
+    " to fully remove cached information for this filetype.
     let g:likelycomplete_filetypes = []   "{{{2
 endif
-
-
-if !exists('g:likelycomplete_data_cfile')
-    let g:likelycomplete_data_cfile = tlib#persistent#Filename('likelycomplete', 'data', 1)   "{{{2
-endif
-
-
-let g:likelycomplete_data = tlib#persistent#Get(g:likelycomplete_data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})   "{{{2
 
 
 augroup LikelyComplete
@@ -53,13 +44,8 @@ function! LikelycompleteSetupFiletype(filetype) "{{{3
 endf
 
 
-for s:ft in keys(g:likelycomplete_data.ft) + g:likelycomplete_filetypes
-    call LikelycompleteSetupFiletype(s:ft)
-endfor
 for s:ft in g:likelycomplete_filetypes
-    if !has_key(g:likelycomplete_data.ft, s:ft)
-        call LikelycompleteSetupFiletype(s:ft)
-    endif
+    call LikelycompleteSetupFiletype(s:ft)
 endfor
 unlet! s:ft
 

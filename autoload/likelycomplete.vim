@@ -1,6 +1,14 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    132
+" @Revision:    133
+
+
+if !exists('g:likelycomplete#data_cfile')
+    let g:likelycomplete#data_cfile = tlib#persistent#Filename('likelycomplete', 'data', 1)   "{{{2
+endif
+
+
+let g:likelycomplete#data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})   "{{{2
 
 
 if !exists('g:likelycomplete#maxsize')
@@ -61,11 +69,11 @@ endf
 
 
 function! likelycomplete#Config(filetype, options) "{{{3
-    if !has_key(g:likelycomplete_data.ft_options, a:filetype)
-        let g:likelycomplete_data.ft_options[a:filetype] = {}
+    if !has_key(g:likelycomplete#data.ft_options, a:filetype)
+        let g:likelycomplete#data.ft_options[a:filetype] = {}
     endif
     if !empty(a:options)
-        call extend(g:likelycomplete_data.ft_options[a:filetype], a:options)
+        call extend(g:likelycomplete#data.ft_options[a:filetype], a:options)
     endif
     call s:SetDerivedOptions(a:filetype)
 endf
@@ -73,16 +81,16 @@ endf
 
 function! s:SetDerivedOptions(filetype) "{{{3
     " TLogVAR a:filetype, &ft
-    if &ft == a:filetype && !has_key(g:likelycomplete_data.ft_options[a:filetype], 'cms')
-        let g:likelycomplete_data.ft_options[a:filetype].cms = &cms
+    if &ft == a:filetype && !has_key(g:likelycomplete#data.ft_options[a:filetype], 'cms')
+        let g:likelycomplete#data.ft_options[a:filetype].cms = &cms
     endif
 endf
 
 
 function! likelycomplete#EnsureFiletype(filetype) "{{{3
-    if !has_key(g:likelycomplete_data.ft, a:filetype)
+    if !has_key(g:likelycomplete#data.ft, a:filetype)
         " TLogVAR a:filetype
-        let g:likelycomplete_data.ft[a:filetype] = {}
+        let g:likelycomplete#data.ft[a:filetype] = {}
         call likelycomplete#Config(a:filetype, {})
         call LikelycompleteSetupFiletype(a:filetype)
         call likelycomplete#SaveFiletypes()
@@ -95,8 +103,8 @@ endf
 
 function! likelycomplete#RemoveFiletype(filetype) "{{{3
     " TLogVAR a:filetype
-    unlet! g:likelycomplete_data.ft[a:filetype]
-    unlet! g:likelycomplete_data.ft_options[a:filetype]
+    unlet! g:likelycomplete#data.ft[a:filetype]
+    unlet! g:likelycomplete#data.ft_options[a:filetype]
     let fname = s:WordListFilename(a:filetype)
     if filereadable(fname)
         call delete(fname)
@@ -107,13 +115,13 @@ endf
 
 
 function! likelycomplete#SaveFiletypes() "{{{3
-    call tlib#persistent#Save(g:likelycomplete_data_cfile, g:likelycomplete_data)
+    call tlib#persistent#Save(g:likelycomplete#data_cfile, g:likelycomplete#data)
 endf
 
 
 function! s:WordListFilename(filetype) "{{{3
     " TLogVAR a:filetype
-    let dir = fnamemodify(g:likelycomplete_data_cfile, ':p:h')
+    let dir = fnamemodify(g:likelycomplete#data_cfile, ':p:h')
     let fname = tlib#file#Join([dir, a:filetype .'_words'])
     " TLogVAR fname
     return fname
@@ -134,7 +142,7 @@ endf
 
 
 function! s:FtOptions(filetype) "{{{3
-    let ft_options = get(g:likelycomplete_data.ft_options, a:filetype, {})
+    let ft_options = get(g:likelycomplete#data.ft_options, a:filetype, {})
     " TLogVAR 1, ft_options
     if exists('g:likelycomplete_options_'. a:filetype)
         call extend(ft_options, g:likelycomplete_options_{a:filetype})
@@ -190,7 +198,7 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
         let words = filter(words, 'v:val !~ ''^-\?\d\+\(\.\d\+\)\?$''')
         " TLogVAR 3, len(words)
     endif
-    let data = g:likelycomplete_data.ft[a:filetype]
+    let data = g:likelycomplete#data.ft[a:filetype]
     " TLogVAR words
     if !empty(words)
         for word in words
@@ -215,7 +223,7 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
                 let data[word].n += 1
             endif
         endfor
-        let g:likelycomplete_data.ft[a:filetype] = data
+        let g:likelycomplete#data.ft[a:filetype] = data
         if !s:WriteWordList(a:filetype)
             call likelycomplete#SaveFiletypes()
         endif
@@ -225,7 +233,7 @@ endf
 
 function! s:WriteWordList(filetype) "{{{3
     " TLogVAR a:filetype
-    let data = get(g:likelycomplete_data.ft, a:filetype, {})
+    let data = get(g:likelycomplete#data.ft, a:filetype, {})
     let saved_data = 0
     if !empty(data)
         let ft_options = s:FtOptions(a:filetype)
@@ -247,7 +255,7 @@ function! s:WriteWordList(filetype) "{{{3
             for word in truncated
                 call remove(data, word)
             endfor
-            let g:likelycomplete_data.ft[a:filetype] = data
+            let g:likelycomplete#data.ft[a:filetype] = data
             call likelycomplete#SaveFiletypes()
             let saved_data = 1
         endif
