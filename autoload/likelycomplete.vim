@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    145
+" @Revision:    153
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -36,7 +36,7 @@ endif
 
 if !exists('g:likelycomplete#maxsize')
     " The maximum number of words kept per filetype.
-    let g:likelycomplete#maxsize = 1000   "{{{2
+    let g:likelycomplete#maxsize = 3000   "{{{2
 endif
 
 
@@ -262,14 +262,15 @@ function! s:WriteWordList(filetype) "{{{3
         let ft_options = s:FtOptions(a:filetype)
         let maxsize = get(ft_options, 'maxsize', g:likelycomplete#maxsize)
         let words = values(map(copy(data), '[(0.0 + v:val.obs) / v:val.n, v:key]'))
-        let words = reverse(sort(words))
+        let words = sort(words)
+        let words = map(words, 'v:val[1]')
+        let words = reverse(words)
         if len(words) > maxsize
             let truncated = words[maxsize : -1]
-            let words = words[0 : maxsize]
+            let words = words[0 : maxsize - 1]
         else
             let truncated = []
         endif
-        let words = map(words, 'v:val[1]')
         let fname = s:WordListFilename(a:filetype)
         " TLogVAR fname, len(words)
         call writefile(words, fname)
