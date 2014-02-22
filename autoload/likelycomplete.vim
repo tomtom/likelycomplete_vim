@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    153
+" @Revision:    162
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -285,6 +285,25 @@ function! s:WriteWordList(filetype) "{{{3
         endif
     endif
     return saved_data
+endf
+
+
+function! likelycomplete#RemoveWords(...) "{{{3
+    let filetype = a:0 >= 1 && !empty(a:1) ? a:1 : &filetype
+    let data = get(g:likelycomplete#data.ft, filetype, {})
+    if !empty(data)
+        let words0 = sort(keys(data))
+        let words1 = tlib#input#List('m', 'Select obsolete words', words0)
+        if !empty(words1)
+            for word in words1
+                call remove(data, word)
+            endfor
+            let g:likelycomplete#data.ft[filetype] = data
+            if !s:WriteWordList(filetype)
+                call likelycomplete#SaveFiletypes()
+            endif
+        endif
+    endif
 endf
 
 

@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    46
+" @Revision:    51
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -54,6 +54,12 @@ unlet! s:ft
 "   strip_rx ........ Remove matching text from lines
 "   exclude_lines_rx .. Exclude lines matching this |regexp|
 command! -nargs=? Likelycomplete call likelycomplete#SetupFiletype(&filetype, likelycomplete#String2Args(<q-args>))
+
+
+" :display: :Likelycompleteremovewords [FILETYPE]
+" Remove words from the list for a given filetype (or the filetype of 
+" the current buffer).
+command! -nargs=? -complete=filetype Likelycompleteremovewords call likelycomplete#RemoveWords(<q-args>)
 
 
 let &cpo = s:save_cpo
