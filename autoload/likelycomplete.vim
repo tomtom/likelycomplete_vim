@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    162
+" @Revision:    164
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -36,7 +36,7 @@ endif
 
 if !exists('g:likelycomplete#maxsize')
     " The maximum number of words kept per filetype.
-    let g:likelycomplete#maxsize = 3000   "{{{2
+    let g:likelycomplete#maxsize = 5000   "{{{2
 endif
 
 
