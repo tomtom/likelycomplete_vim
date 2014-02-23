@@ -1,10 +1,9 @@
 Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
-plugin observes any files you edit. It collects the words, ranks them 
-based on the probability of their occurrences (sort of) and compiles a 
-word list that is fed to 'complete'. This way any words that are 
-sufficiently frequently used in files of an enabled filetype, should be 
+plugin observes any buffer of that filetype. It collects the words, 
+ranks them based on the probability of their occurrences (sort of) and 
+compiles a dictionary file that is fed to 'complete'. This way any words 
+that are frequently used in files of an enabled filetype, should be 
 offered in the completion list (see |i_CTRL-P|).
-
 
 
 -----------------------------------------------------------------------
