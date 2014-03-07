@@ -32,35 +32,36 @@ certain filetype.
 ========================================================================
 Contents~
 
-        g:likelycomplete_filetypes ........ |g:likelycomplete_filetypes|
-        LikelycompleteSetupFiletype ....... |LikelycompleteSetupFiletype()|
-        :Likelycomplete ................... |:Likelycomplete|
-        :Likelycompleteremovewords ........ |:Likelycompleteremovewords|
-        :Likelycompletemapcompletefunc .... |:Likelycompletemapcompletefunc|
-        :Likelycompletemapselect .......... |:Likelycompletemapselect|
-        g:likelycomplete#select_imap ...... |g:likelycomplete#select_imap|
-        g:likelycomplete#use_omnifunc ..... |g:likelycomplete#use_omnifunc|
-        g:likelycomplete#other_sources .... |g:likelycomplete#other_sources|
-        g:likelycomplete#data_cfile ....... |g:likelycomplete#data_cfile|
-        g:likelycomplete#data ............. |g:likelycomplete#data|
-        g:likelycomplete#options_vim ...... |g:likelycomplete#options_vim|
-        g:likelycomplete#maxsize .......... |g:likelycomplete#maxsize|
-        g:likelycomplete#word_minlength ... |g:likelycomplete#word_minlength|
-        g:likelycomplete#base ............. |g:likelycomplete#base|
-        g:likelycomplete#max .............. |g:likelycomplete#max|
-        likelycomplete#SetupFiletype ...... |likelycomplete#SetupFiletype()|
-        likelycomplete#String2Args ........ |likelycomplete#String2Args()|
-        likelycomplete#SetupBuffer ........ |likelycomplete#SetupBuffer()|
-        likelycomplete#Config ............. |likelycomplete#Config()|
-        likelycomplete#EnsureFiletype ..... |likelycomplete#EnsureFiletype()|
-        likelycomplete#RemoveFiletype ..... |likelycomplete#RemoveFiletype()|
-        likelycomplete#SaveFiletypes ...... |likelycomplete#SaveFiletypes()|
-        likelycomplete#RemoveWords ........ |likelycomplete#RemoveWords()|
-        likelycomplete#MapSelectWord ...... |likelycomplete#MapSelectWord()|
-        likelycomplete#SelectWord ......... |likelycomplete#SelectWord()|
-        likelycomplete#SetComleteFunc ..... |likelycomplete#SetComleteFunc()|
-        likelycomplete#Complete ........... |likelycomplete#Complete()|
-        likelycomplete#GetCompletions ..... |likelycomplete#GetCompletions()|
+        g:likelycomplete_filetypes ........... |g:likelycomplete_filetypes|
+        LikelycompleteSetupFiletype .......... |LikelycompleteSetupFiletype()|
+        :Likelycomplete ...................... |:Likelycomplete|
+        :Likelycompleteremovewords ........... |:Likelycompleteremovewords|
+        :Likelycompletemapcompletefunc ....... |:Likelycompletemapcompletefunc|
+        :Likelycompletemapselect ............. |:Likelycompletemapselect|
+        g:likelycomplete#select_imap ......... |g:likelycomplete#select_imap|
+        g:likelycomplete#use_omnifunc ........ |g:likelycomplete#use_omnifunc|
+        g:likelycomplete#use_fuzzy_matches ... |g:likelycomplete#use_fuzzy_matches|
+        g:likelycomplete#other_sources ....... |g:likelycomplete#other_sources|
+        g:likelycomplete#data_cfile .......... |g:likelycomplete#data_cfile|
+        g:likelycomplete#data ................ |g:likelycomplete#data|
+        g:likelycomplete#options_vim ......... |g:likelycomplete#options_vim|
+        g:likelycomplete#maxsize ............. |g:likelycomplete#maxsize|
+        g:likelycomplete#word_minlength ...... |g:likelycomplete#word_minlength|
+        g:likelycomplete#base ................ |g:likelycomplete#base|
+        g:likelycomplete#max ................. |g:likelycomplete#max|
+        likelycomplete#SetupFiletype ......... |likelycomplete#SetupFiletype()|
+        likelycomplete#String2Args ........... |likelycomplete#String2Args()|
+        likelycomplete#SetupBuffer ........... |likelycomplete#SetupBuffer()|
+        likelycomplete#Config ................ |likelycomplete#Config()|
+        likelycomplete#EnsureFiletype ........ |likelycomplete#EnsureFiletype()|
+        likelycomplete#RemoveFiletype ........ |likelycomplete#RemoveFiletype()|
+        likelycomplete#SaveFiletypes ......... |likelycomplete#SaveFiletypes()|
+        likelycomplete#RemoveWords ........... |likelycomplete#RemoveWords()|
+        likelycomplete#MapSelectWord ......... |likelycomplete#MapSelectWord()|
+        likelycomplete#SelectWord ............ |likelycomplete#SelectWord()|
+        likelycomplete#SetComleteFunc ........ |likelycomplete#SetComleteFunc()|
+        likelycomplete#Complete .............. |likelycomplete#Complete()|
+        likelycomplete#GetCompletions ........ |likelycomplete#GetCompletions()|
 
 
 ========================================================================
@@ -123,6 +124,15 @@ g:likelycomplete#select_imap   (default: '')
 g:likelycomplete#use_omnifunc  (default: 0)
     If true, |likelycomplete#GetCompletions()| also offers completions 
     from 'omnifunc'.
+    Please be aware that some omnifunc take their time (at least on 
+    first invocation).
+
+                                                    *g:likelycomplete#use_fuzzy_matches*
+g:likelycomplete#use_fuzzy_matches (default: 0)
+    If true, use fuzzy matches for |:Likelycompletemapselect| 
+    and |:Likelycompletemapcompletefunc|.
+    In order to also use fuzzy search in the list picker, also set 
+    |g:tlib#input#filter_mode| to 'fuzzy'.
 
                                                     *g:likelycomplete#other_sources*
 g:likelycomplete#other_sources (default: [])
