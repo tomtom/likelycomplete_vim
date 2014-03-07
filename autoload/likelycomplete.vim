@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    220
+" @Revision:    227
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -23,7 +23,18 @@ endif
 if !exists('g:likelycomplete#use_omnifunc')
     " If true, |likelycomplete#GetCompletions()| also offers completions 
     " from 'omnifunc'.
+    " Please be aware that some omnifunc take their time (at least on 
+    " first invocation).
     let g:likelycomplete#use_omnifunc = 0   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#use_fuzzy_matches')
+    " If true, use fuzzy matches for |:Likelycompletemapselect| 
+    " and |:Likelycompletemapcompletefunc|.
+    " In order to also use fuzzy search in the list picker, also set 
+    " |g:tlib#input#filter_mode| to 'fuzzy'.
+    let g:likelycomplete#use_fuzzy_matches = 0   "{{{2
 endif
 
 
@@ -404,8 +415,13 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
         let completions += readfile(fname)
     endif
     if !empty(a:base)
-        let epos = len(a:base) - 1
-        let completions = filter(completions, 'v:val[0 : epos] == a:base')
+        if g:likelycomplete#use_fuzzy_matches
+            let rx = '\V'. join(map(split(a:base, '\zs'), 'escape(v:val, ''\'')'), '\.\{-}')
+            let completions = filter(completions, 'v:val =~ rx')
+        else
+            let epos = len(a:base) - 1
+            let completions = filter(completions, 'v:val[0 : epos] == a:base')
+        endif
     endif
     return completions
 endf
