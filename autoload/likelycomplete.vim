@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    216
+" @Revision:    220
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -24,6 +24,15 @@ if !exists('g:likelycomplete#use_omnifunc')
     " If true, |likelycomplete#GetCompletions()| also offers completions 
     " from 'omnifunc'.
     let g:likelycomplete#use_omnifunc = 0   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#other_sources')
+    " A list of variable names, whose values will be added to the word 
+    " list.
+    " This is only used in conjunction with |:Likelycompletemapselect| 
+    " and |:Likelycompletemapcompletefunc|.
+    let g:likelycomplete#other_sources = []   "{{{2
 endif
 
 
@@ -372,6 +381,22 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
     for fn in fns
         if !empty(fn)
             let completions += call(fn, [0, a:base])
+        endif
+    endfor
+    for var in g:likelycomplete#other_sources
+        if exists(var) && !empty(var)
+            exec 'let varval =' var
+            if type(varval) == 1
+                let words = split(varval, '\n')
+            elseif type(varval) == 3
+                let words = varval
+            elseif type(varval) == 4
+                let words = keys(varval)
+            else
+                throw 'LikelyComplete: Unsupported type for var '. var
+            endif
+            let completions += words
+            unlet varval
         endif
     endfor
     let fname = s:WordListFilename(a:filetype)
