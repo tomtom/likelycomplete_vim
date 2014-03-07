@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    51
+" @Revision:    59
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -60,6 +60,20 @@ command! -nargs=? Likelycomplete call likelycomplete#SetupFiletype(&filetype, li
 " Remove words from the list for a given filetype (or the filetype of 
 " the current buffer).
 command! -nargs=? -complete=filetype Likelycompleteremovewords call likelycomplete#RemoveWords(<q-args>)
+
+
+" Map 'completefunc' to a function that returns matches from the 
+" original completefunc and from the buffers wordlist.
+" See also |g:likelycomplete#use_omnifunc|.
+command! Likelycompletemapcompletefunc call likelycomplete#SetComleteFunc()
+
+
+" :display: :Likelycompletemapselect IMAP
+" Map insert mode IMAP to a function that lets users select a completion 
+" from a word list.
+" See |tlib#input#List()| for details on how to use the list picker.
+" See also |g:likelycomplete#use_omnifunc| and |g:likelycomplete#select_imap|.
+command! -nargs=1 Likelycompletemapselect call likelycomplete#MapSelectWord(<q-args>)
 
 
 let &cpo = s:save_cpo

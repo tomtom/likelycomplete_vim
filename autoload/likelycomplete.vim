@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    171
+" @Revision:    216
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -9,6 +9,21 @@ if !exists('g:loaded_tlib') || g:loaded_tlib < 107
         echoerr 'tlib >= 1.07 is required'
         finish
     endif
+endif
+
+
+if !exists('g:likelycomplete#select_imap')
+    " The default map for |:Likelycompletemapselect|.
+    " If non-empty, enable |:Likelycompletemapselect| for all enabled 
+    " filetypes.
+    let g:likelycomplete#select_imap = ''   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#use_omnifunc')
+    " If true, |likelycomplete#GetCompletions()| also offers completions 
+    " from 'omnifunc'.
+    let g:likelycomplete#use_omnifunc = 0   "{{{2
 endif
 
 
@@ -87,6 +102,9 @@ function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
         call s:SetDerivedOptions(a:filetype)
     endif
     call s:SetupComplete(a:filetype)
+    if !empty(g:likelycomplete#select_imap)
+        call likelycomplete#MapSelectWord(g:likelycomplete#select_imap)
+    endif
     exec 'autocmd LikelyComplete BufUnload <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(a:filetype) .','. string(expand('%:p')) .')'
 endf
 
@@ -303,6 +321,68 @@ function! likelycomplete#RemoveWords(...) "{{{3
             endif
         endif
     endif
+endf
+
+
+function! likelycomplete#MapSelectWord(imap) "{{{3
+    let imap = empty(a:imap) ? g:likelycomplete#select_imap : a:imap
+    if !empty(imap)
+        exec 'inoremap' imap '<C-S-Left><DEL><C-r>=likelycomplete#SelectWord(@")<cr>'
+    endif
+endf
+
+
+function! likelycomplete#SelectWord(base) "{{{3
+    let words = likelycomplete#GetCompletions(&filetype, a:base)
+    let word = tlib#input#List('s', 'Select word:', words)
+    if empty(word)
+        return a:base
+    else
+        return word
+    endif
+endf
+
+
+function! likelycomplete#SetComleteFunc() "{{{3
+    let b:likely_completefunc = &l:completefunc
+    setl completefunc=likelycomplete#Complete
+endf
+
+
+function! likelycomplete#Complete(findstart, base) "{{{3
+    if a:findstart
+        let line = strpart(getline('.'), 0, col('.') - 1)
+        let start = match(line, '\k\+$')
+        return start
+    else
+        return likelycomplete#GetCompletions(&filetype, a:base)
+    endif
+endf
+
+
+function! likelycomplete#GetCompletions(filetype, base) "{{{3
+    let completions = []
+    let fns = []
+    if exists('b:likely_completefunc')
+        call add(fns, b:likely_completefunc)
+    endif
+    if g:likelycomplete#use_omnifunc
+        call add(fns, &l:omnifunc)
+    endif
+    for fn in fns
+        if !empty(fn)
+            let completions += call(fn, [0, a:base])
+        endif
+    endfor
+    let fname = s:WordListFilename(a:filetype)
+    if filereadable(fname)
+        let completions += readfile(fname)
+    endif
+    if !empty(a:base)
+        let epos = len(a:base) - 1
+        let completions = filter(completions, 'v:val[0 : epos] == a:base')
+    endif
+    return completions
 endf
 
 
