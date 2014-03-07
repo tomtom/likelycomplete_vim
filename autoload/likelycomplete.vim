@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    164
+" @Revision:    171
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -52,13 +52,13 @@ if !exists('g:likelycomplete#base')
     " that was't included in any of these files.
     " If this value is too low, new words won't get a chance to be 
     " included in the list.
-    let g:likelycomplete#base = 50   "{{{2
+    let g:likelycomplete#base = 1   "{{{2
 endif
 
 
 if !exists('g:likelycomplete#max')
     " The maximum number of observations taken into account.
-    let g:likelycomplete#max = 100   "{{{2
+    let g:likelycomplete#max = 10000   "{{{2
 endif
 
 
@@ -224,26 +224,25 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     let data = g:likelycomplete#data.ft[a:filetype]
     " TLogVAR words
     if !empty(words)
+        let wordds = {}
         for word in words
+            let wordds[word] = 1
             if has_key(data, word)
                 let obs = data[word].obs
                 if obs < g:likelycomplete#max
                     let data[word].obs = obs + 1
-                endif
-                let n = data[word].n
-                if n < g:likelycomplete#max
-                    let data[word].n = n + 1
+                elseif data[word].n > 1
+                    let data[word].n -= 1
                 endif
             else
                 let data[word] = {'obs': g:likelycomplete#base, 'n': g:likelycomplete#base}
             endif
         endfor
-        for word in filter(keys(data), 'index(words, v:val) == -1')
-            let obs = data[word].obs - 1
-            if obs > 0
-                let data[word].obs = obs
-            else
+        for word in filter(keys(data), '!has_key(wordds, v:val)')
+            if data[word].n < g:likelycomplete#max
                 let data[word].n += 1
+            elseif data[word].obs > 1
+                let data[word].obs -= 1
             endif
         endfor
         let g:likelycomplete#data.ft[a:filetype] = data
