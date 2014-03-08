@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    238
+" @Revision:    240
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -9,6 +9,14 @@ if !exists('g:loaded_tlib') || g:loaded_tlib < 107
         echoerr 'tlib >= 1.07 is required'
         finish
     endif
+endif
+
+
+if !exists('g:likelycomplete#list_set_filter')
+    " If true, the part of the words matching the the base text will be 
+    " highlighted in |likelycomplete#SelectWord()|.
+    " If false, the setting of 'smartcase' is ignored.
+    let g:likelycomplete#list_set_filter = 0   "{{{2
 endif
 
 
@@ -358,7 +366,11 @@ endf
 
 function! likelycomplete#SelectWord(base) "{{{3
     let words = likelycomplete#GetCompletions(&filetype, a:base)
-    let word = tlib#input#List('s', 'Select word:', words)
+    let handlers = []
+    if g:likelycomplete#list_set_filter
+        call add(handlers, {'filter': s:GetVFilter(a:base)})
+    endif
+    let word = tlib#input#List('s', 'Select word:', words, handlers)
     if empty(word)
         return a:base
     else
@@ -430,4 +442,13 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
     return completions
 endf
 
+
+function! s:GetVFilter(base) "{{{3
+    if g:likelycomplete#use_fuzzy_matches
+        let rx = '\V'. join(map(split(a:base, '\zs'), 'escape(v:val, ''\'')'), '\.\{-}')
+    else
+        let rx = '\V\^'. escape(a:base, ''\'')')
+    endif
+    return rx
+endf
 
