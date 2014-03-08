@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    240
+" @Revision:    241
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -25,6 +25,13 @@ if !exists('g:likelycomplete#select_imap')
     " If non-empty, enable |:Likelycompletemapselect| for all enabled 
     " filetypes.
     let g:likelycomplete#select_imap = ''   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#set_completefunc')
+    " If true, set 'completefunc' for supported buffers. The results of 
+    " the old completefunc will be incorporated.
+    let g:likelycomplete#set_completefunc = 0   "{{{2
 endif
 
 
@@ -210,6 +217,9 @@ function! s:SetupComplete(filetype) "{{{3
             exec 'setl dictionary+='. escape(fname, ' ,')
             " TLogVAR &l:dictionary
         endif
+    endif
+    if g:likelycomplete#set_completefunc
+        call likelycomplete#SetComleteFunc()
     endif
 endf
 

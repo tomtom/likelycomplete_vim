@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    59
+" @Revision:    61
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -64,7 +64,8 @@ command! -nargs=? -complete=filetype Likelycompleteremovewords call likelycomple
 
 " Map 'completefunc' to a function that returns matches from the 
 " original completefunc and from the buffers wordlist.
-" See also |g:likelycomplete#use_omnifunc|.
+" See also |g:likelycomplete#use_omnifunc| and 
+" |g:likelycomplete#set_completefunc|.
 command! Likelycompletemapcompletefunc call likelycomplete#SetComleteFunc()
 
 
