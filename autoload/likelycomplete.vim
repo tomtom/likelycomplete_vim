@@ -398,6 +398,10 @@ endf
 
 function! likelycomplete#GetCompletions(filetype, base) "{{{3
     let completions = []
+    let fname = s:WordListFilename(a:filetype)
+    if filereadable(fname)
+        let completions += readfile(fname)
+    endif
     let fns = []
     if exists('b:likely_completefunc')
         call add(fns, b:likely_completefunc)
@@ -426,13 +430,9 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
             unlet varval
         endif
     endfor
-    let fname = s:WordListFilename(a:filetype)
-    if filereadable(fname)
-        let completions += readfile(fname)
-    endif
     if !empty(a:base)
         if g:likelycomplete#use_fuzzy_matches
-            let rx = '\V'. join(map(split(a:base, '\zs'), 'escape(v:val, ''\'')'), '\.\{-}')
+            let rx = s:GetVFilter(a:base)
             let completions = filter(completions, 'v:val =~ rx')
         else
             let epos = len(a:base) - 1
