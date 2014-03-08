@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    227
+" @Revision:    238
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -197,6 +197,10 @@ function! s:SetupComplete(filetype) "{{{3
         if stridx(&l:complete, opt) == -1
             exec 'setl complete+='. escape(opt, ' ,')
             " TLogVAR &l:complete
+        endif
+        if stridx(&l:dictionary, fname) == -1
+            exec 'setl dictionary+='. escape(fname, ' ,')
+            " TLogVAR &l:dictionary
         endif
     endif
 endf
