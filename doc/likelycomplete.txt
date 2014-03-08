@@ -38,7 +38,9 @@ Contents~
         :Likelycompleteremovewords ........... |:Likelycompleteremovewords|
         :Likelycompletemapcompletefunc ....... |:Likelycompletemapcompletefunc|
         :Likelycompletemapselect ............. |:Likelycompletemapselect|
+        g:likelycomplete#list_set_filter ..... |g:likelycomplete#list_set_filter|
         g:likelycomplete#select_imap ......... |g:likelycomplete#select_imap|
+        g:likelycomplete#set_completefunc .... |g:likelycomplete#set_completefunc|
         g:likelycomplete#use_omnifunc ........ |g:likelycomplete#use_omnifunc|
         g:likelycomplete#use_fuzzy_matches ... |g:likelycomplete#use_fuzzy_matches|
         g:likelycomplete#other_sources ....... |g:likelycomplete#other_sources|
@@ -101,7 +103,8 @@ LikelycompleteSetupFiletype(filetype)
 :Likelycompletemapcompletefunc
     Map 'completefunc' to a function that returns matches from the 
     original completefunc and from the buffers wordlist.
-    See also |g:likelycomplete#use_omnifunc|.
+    See also |g:likelycomplete#use_omnifunc| and 
+    |g:likelycomplete#set_completefunc|.
 
                                                     *:Likelycompletemapselect*
 :Likelycompletemapselect IMAP
@@ -114,11 +117,22 @@ LikelycompleteSetupFiletype(filetype)
 ========================================================================
 autoload/likelycomplete.vim~
 
+                                                    *g:likelycomplete#list_set_filter*
+g:likelycomplete#list_set_filter (default: 0)
+    If true, the part of the words matching the the base text will be 
+    highlighted in |likelycomplete#SelectWord()|.
+    If false, the setting of 'smartcase' is ignored.
+
                                                     *g:likelycomplete#select_imap*
 g:likelycomplete#select_imap   (default: '')
     The default map for |:Likelycompletemapselect|.
     If non-empty, enable |:Likelycompletemapselect| for all enabled 
     filetypes.
+
+                                                    *g:likelycomplete#set_completefunc*
+g:likelycomplete#set_completefunc (default: 0)
+    If true, set 'completefunc' for supported buffers. The results of 
+    the old completefunc will be incorporated.
 
                                                     *g:likelycomplete#use_omnifunc*
 g:likelycomplete#use_omnifunc  (default: 0)
