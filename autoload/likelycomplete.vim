@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    241
+" @Revision:    314
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -157,9 +157,89 @@ endf
 
 function! s:SetDerivedOptions(filetype) "{{{3
     " TLogVAR a:filetype, &ft
-    if &ft == a:filetype && !has_key(g:likelycomplete#data.ft_options[a:filetype], 'cms')
-        let g:likelycomplete#data.ft_options[a:filetype].cms = &cms
+    if &ft == a:filetype
+        let ft_options = g:likelycomplete#data.ft_options[a:filetype]
+        if !has_key(ft_options, 'cms')
+            let g:likelycomplete#data.ft_options[a:filetype].cms = &cms
+        endif
+        if !has_key(ft_options, 'keyword_rx') && !empty(&l:iskeyword)
+            let g:likelycomplete#data.ft_options[a:filetype].keyword_rx = s:GetKeywordRx(&l:iskeyword, 0)
+        endif
+        if !has_key(ft_options, 'split_rx') && !empty(&l:iskeyword)
+            let g:likelycomplete#data.ft_options[a:filetype].split_rx = s:GetKeywordRx(&l:iskeyword, 1)
+        endif
     endif
+endf
+
+
+function! s:GetKeywordRx(iskeyword, inverse) "{{{3
+    " TLogVAR a:iskeyword, a:inverse
+    let parts = map(split(a:iskeyword, ','), 's:KeywordPartRx(split(v:val, ''-''), 0)')
+    " TLogVAR parts
+    let pos = filter(copy(parts), 'v:val !~ ''^\^''')
+    let neg = filter(copy(parts), 'v:val =~ ''^\^''')
+    let neg = map(neg, 'substitute(v:val, ''^\^'', "", "")')
+    let idash = index(pos, '-')
+    if idash != -1
+        call add(pos, remove(pos, idash))
+    endif
+    let idash = index(neg, '-')
+    if idash != -1
+        call add(neg, remove(neg, idash))
+    endif
+    if a:inverse
+        if !empty(pos)
+            let pos = insert(pos, '^')
+        endif
+    else
+        if !empty(neg)
+            let neg = insert(neg, '^')
+        endif
+    endif
+    " TLogVAR pos, neg
+    let poss = join(pos, '')
+    let negs = join(neg, '')
+    if !empty(poss)
+        if !empty(negs)
+            let rx = printf('\%([%s]\+\|[%s]\+\)\+', poss, negs)
+        else
+            let rx = '['. poss .']\+'
+        endif
+    elseif !empty(negs)
+        let rx = '['. negs .']\+'
+    elseif a:inverse
+        let rx = '\W\+'
+    else
+        let rx = '\w\+'
+    endif
+    " let rx = '\%('. join(parts, '\|') .'\)\+'
+    " let rx = '['
+    " if a:inverse
+    "     let rx .= '^'
+    " endif
+    " let rx .= join(parts, '') .']\+'
+    " TLogVAR rx
+    return rx
+endf
+
+
+function! s:KeywordPartRx(subparts, inverse) "{{{3
+    " TLogVAR a:subparts
+    if len(a:subparts) > 2
+        throw "KeywordPartRx: Internal error: ". string(a:subparts)
+    endif
+    let subparts = map(a:subparts, 'v:val =~ ''^\d\+$'' ? nr2char(v:val) : v:val')
+    " TLogVAR subparts
+    let inverse = a:inverse
+    let rv = join(subparts, '-')
+    if rv =~ '^\^'
+        let inverse = !inverse
+    endif
+    if rv == '@'
+        let rv = '[:alpha:]'
+    endif
+    let pre = inverse ? '^' : ''
+    return pre . rv
 endf
 
 
@@ -237,6 +317,9 @@ endf
 
 function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     " TLogVAR a:bufnr, a:filetype, a:filename, bufnr('%')
+    if getbufvar(a:bufnr, 'likelycomplete_done', 0)
+        return
+    endif
     let ft_options = s:FtOptions(a:filetype)
     " TLogVAR ft_options
     if bufnr('%') == a:bufnr
@@ -270,10 +353,14 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     if get(ft_options, 'strip_strings', 1)
         let text = substitute(text, '\([''"]\).\{-}\1', ' ', 'g')
     endif
-    let rx = get(ft_options, 'keyword_rx', '\k\+')
-    " TLogVAR rx
-    let words = split(text, rx .'\zs')
-    let words = map(words, 'matchstr(v:val, rx)')
+    " let keyword_rx = get(ft_options, 'keyword_rx', '\w\+')
+    " let words = split(text, keyword_rx .'\zs')
+    " let words = map(words, 'matchstr(v:val, keyword_rx)')
+    let split_rx = get(ft_options, 'split_rx', '\W\+')
+    let @+ = split_rx
+    " TLogVAR split_rx
+    let words = split(text, split_rx)
+    " TLogVAR words
     " TLogVAR 1, len(words)
     let words = filter(words, '!empty(v:val) && strwidth(v:val) >= g:likelycomplete#word_minlength')
     " TLogVAR 2, len(words)
@@ -281,8 +368,8 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
         let words = filter(words, 'v:val !~ ''^-\?\d\+\(\.\d\+\)\?$''')
         " TLogVAR 3, len(words)
     endif
-    let data = g:likelycomplete#data.ft[a:filetype]
     " TLogVAR words
+    let data = g:likelycomplete#data.ft[a:filetype]
     if !empty(words)
         let wordds = {}
         for word in words
@@ -310,6 +397,7 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
             call likelycomplete#SaveFiletypes()
         endif
     endif
+    call setbufvar(a:bufnr, 'likelycomplete_done', 1)
 endf
 
 
@@ -390,7 +478,7 @@ endf
 
 
 function! likelycomplete#SetComleteFunc() "{{{3
-    let b:likely_completefunc = &l:completefunc
+    let b:likelycomplete_completefunc = &l:completefunc
     setl completefunc=likelycomplete#Complete
 endf
 
@@ -413,8 +501,8 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
         let completions += readfile(fname)
     endif
     let fns = []
-    if exists('b:likely_completefunc')
-        call add(fns, b:likely_completefunc)
+    if exists('b:likelycomplete_completefunc')
+        call add(fns, b:likelycomplete_completefunc)
     endif
     if g:likelycomplete#use_omnifunc
         call add(fns, &l:omnifunc)
@@ -441,23 +529,25 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
         endif
     endfor
     if !empty(a:base)
-        if g:likelycomplete#use_fuzzy_matches
-            let rx = s:GetVFilter(a:base)
-            let completions = filter(completions, 'v:val =~ rx')
-        else
-            let epos = len(a:base) - 1
-            let completions = filter(completions, 'v:val[0 : epos] == a:base')
-        endif
+        let rx = s:GetVFilter(a:base)
+        let completions = filter(completions, 'v:val =~ rx')
     endif
     return completions
 endf
 
 
 function! s:GetVFilter(base) "{{{3
-    if g:likelycomplete#use_fuzzy_matches
-        let rx = '\V'. join(map(split(a:base, '\zs'), 'escape(v:val, ''\'')'), '\.\{-}')
+    if &smartcase && a:base =~ '\u'
+        let rx = '\C\V\^'
+    elseif &ignorecase
+        let rx = '\c\V\^'
     else
-        let rx = '\V\^'. escape(a:base, ''\'')')
+        let rx = '\C\V\^'
+    endif
+    if g:likelycomplete#use_fuzzy_matches
+        let rx .= join(map(split(a:base, '\zs'), 'escape(v:val, ''\'')'), '\.\{-}')
+    else
+        let rx .= escape(a:base, '\')
     endif
     return rx
 endf
