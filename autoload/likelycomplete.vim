@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    325
+" @Revision:    330
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -169,10 +169,8 @@ function! s:SetDerivedOptions(filetype) "{{{3
         if !has_key(ft_options, 'cms')
             let g:likelycomplete#data.ft_options[a:filetype].cms = &cms
         endif
-        if !has_key(ft_options, 'keyword_rx') && !empty(&l:iskeyword)
-            let g:likelycomplete#data.ft_options[a:filetype].keyword_rx = s:GetKeywordRx(&l:iskeyword, 0)
-        endif
-        if !has_key(ft_options, 'split_rx') && !empty(&l:iskeyword)
+        if !empty(&l:iskeyword) && (!has_key(ft_options, 'split_rx') || get(ft_options, 'iskeyword', '') != &l:iskeyword)
+            let g:likelycomplete#data.ft_options[a:filetype].iskeyword = &l:iskeyword
             let g:likelycomplete#data.ft_options[a:filetype].split_rx = s:GetKeywordRx(&l:iskeyword, 1)
         endif
     endif
@@ -360,9 +358,6 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     if get(ft_options, 'strip_strings', 1)
         let text = substitute(text, '\([''"]\).\{-}\1', ' ', 'g')
     endif
-    " let keyword_rx = get(ft_options, 'keyword_rx', '\w\+')
-    " let words = split(text, keyword_rx .'\zs')
-    " let words = map(words, 'matchstr(v:val, keyword_rx)')
     let split_rx = get(ft_options, 'split_rx', '\W\+')
     let @+ = split_rx
     " TLogVAR split_rx
