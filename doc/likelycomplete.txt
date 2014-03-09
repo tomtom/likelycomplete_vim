@@ -80,6 +80,12 @@ g:likelycomplete_filetypes     (default: [])
     variable. You should also call |likelycomplete#RemoveFiletype()| 
     to fully remove cached information for this filetype.
 
+                                                        *b:likelycomplete_filetype*
+    If the variable b:likelycomplete_filetype is defined on FileType 
+    events, its value is used instead of 'filetype'. |:Likelycomplete| 
+    is automatically enabled for all buffers where the 
+    b:likelycomplete_filetype is defined.
+
                                                     *LikelycompleteSetupFiletype()*
 LikelycompleteSetupFiletype(filetype)
 

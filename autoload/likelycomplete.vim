@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    330
+" @Revision:    340
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -162,17 +162,24 @@ function! likelycomplete#Config(filetype, options) "{{{3
 endf
 
 
+function! s:GetFiletype() "{{{3
+    return exists('b:likelycomplete_filetype') ? b:likelycomplete_filetype : &l:filetype
+endf
+
+
 function! s:SetDerivedOptions(filetype) "{{{3
-    " TLogVAR a:filetype, &ft
-    if &ft == a:filetype
+    " TLogVAR a:filetype
+    if s:GetFiletype() == a:filetype
         let ft_options = g:likelycomplete#data.ft_options[a:filetype]
         if !has_key(ft_options, 'cms')
-            let g:likelycomplete#data.ft_options[a:filetype].cms = &cms
+            let g:likelycomplete#data.ft_options[a:filetype].cms = &l:cms
         endif
         if !empty(&l:iskeyword) && (!has_key(ft_options, 'split_rx') || get(ft_options, 'iskeyword', '') != &l:iskeyword)
             let g:likelycomplete#data.ft_options[a:filetype].iskeyword = &l:iskeyword
             let g:likelycomplete#data.ft_options[a:filetype].split_rx = s:GetKeywordRx(&l:iskeyword, 1)
+            " TLogVAR &l:iskeyword, g:likelycomplete#data.ft_options[a:filetype].split_rx
         endif
+        " TLogVAR g:likelycomplete#data.ft_options[a:filetype]
     endif
 endf
 
@@ -443,7 +450,7 @@ endf
 
 
 function! likelycomplete#RemoveWords(...) "{{{3
-    let filetype = a:0 >= 1 && !empty(a:1) ? a:1 : &filetype
+    let filetype = a:0 >= 1 && !empty(a:1) ? a:1 : s:GetFiletype()
     let data = get(g:likelycomplete#data.ft, filetype, {})
     if !empty(data)
         let words0 = sort(keys(data))
@@ -470,7 +477,7 @@ endf
 
 
 function! likelycomplete#SelectWord(base) "{{{3
-    let words = likelycomplete#GetCompletions(&filetype, a:base)
+    let words = likelycomplete#GetCompletions(s:GetFiletype(), a:base)
     let handlers = []
     if g:likelycomplete#list_set_filter
         call add(handlers, {'filter': s:GetVFilter(a:base)})
@@ -496,7 +503,7 @@ function! likelycomplete#Complete(findstart, base) "{{{3
         let start = match(line, '\k\+$')
         return start
     else
-        return likelycomplete#GetCompletions(&filetype, a:base)
+        return likelycomplete#GetCompletions(s:GetFiletype(), a:base)
     endif
 endf
 

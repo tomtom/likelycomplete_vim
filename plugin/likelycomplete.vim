@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    61
+" @Revision:    74
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -21,19 +21,27 @@ if !exists('g:likelycomplete_filetypes')
     " If you want to permanently disable LikelyComplete for a filetype, 
     " it isn't sufficient to remove the filetype name from this 
     " variable. You should also call |likelycomplete#RemoveFiletype()| 
-    " to fully remove cached information for this filetype.
+    " to fully remove any cached information for this filetype.
+    "
+    "                                                   *b:likelycomplete_filetype*
+    " If the variable b:likelycomplete_filetype is defined on FileType 
+    " events, its value is used instead of 'filetype'. LikelyComplete 
+    " is automatically enabled for all buffers where the 
+    " b:likelycomplete_filetype is defined. This variable can be used to 
+    " generate project-specific word lists.
     let g:likelycomplete_filetypes = []   "{{{2
 endif
 
 
 augroup LikelyComplete
     autocmd!
+    autocmd! LikelyComplete Filetype * if exists('b:likelycomplete_filetype') | call likelycomplete#SetupBuffer(b:likelycomplete_filetype, expand("<abuf>")) | endif
 augroup END
 
 
 function! LikelycompleteSetupFiletype(filetype) "{{{3
     exec 'autocmd! LikelyComplete FileType' a:filetype
-    exec 'autocmd LikelyComplete FileType' a:filetype 'call likelycomplete#SetupBuffer('. string(a:filetype) .', expand("<abuf>"))'
+    exec 'autocmd LikelyComplete FileType' a:filetype 'if exists("b:likelycomplete_filetype") | call likelycomplete#SetupBuffer('. string(a:filetype) .', expand("<abuf>")) | endif'
 endf
 
 
@@ -44,6 +52,7 @@ unlet! s:ft
 
 
 " :display: :Likelycomplete [NAME=VALUE ...]
+" Enable LikelyComplete for the current buffer.
 " The following arguments are supported:
 "   maxsize ......... filetype-specific value for 
 "                     |g:likelycomplete#maxsize|
