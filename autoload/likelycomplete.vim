@@ -520,7 +520,7 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
     if exists('b:likelycomplete_completefunc')
         call add(fns, b:likelycomplete_completefunc)
     endif
-    if g:likelycomplete#use_omnifunc
+    if g:likelycomplete#use_omnifunc && exists('+omnifunc')
         call add(fns, &l:omnifunc)
     endif
     for fn in fns
