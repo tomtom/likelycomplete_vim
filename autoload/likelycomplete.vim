@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    340
+" @Revision:    342
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -492,8 +492,10 @@ endf
 
 
 function! likelycomplete#SetComleteFunc() "{{{3
-    let b:likelycomplete_completefunc = &l:completefunc
-    setl completefunc=likelycomplete#Complete
+    if exists('+completefunc')
+        let b:likelycomplete_completefunc = &l:completefunc
+        setl completefunc=likelycomplete#Complete
+    endif
 endf
 
 
