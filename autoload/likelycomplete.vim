@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    342
+" @Revision:    351
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -50,6 +50,19 @@ if !exists('g:likelycomplete#use_fuzzy_matches')
     " In order to also use fuzzy search in the list picker, also set 
     " |g:tlib#input#filter_mode| to 'fuzzy'.
     let g:likelycomplete#use_fuzzy_matches = 0   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#list_picker')
+    " VIM plugin developers can add support for "list pickers" other 
+    " than tlib by defining the following functions:
+    "
+    " 1. Select a single item from a list:
+    "     likelycomplete#SingleSelect_{TYPE}(prompt, list, ?handlers=[])
+    "
+    " 2. Select multiple item from a list:
+    "     likelycomplete#MultiSelect_{TYPE}(prompt, list)
+    let g:likelycomplete#list_picker = 'tlib'   "{{{2
 endif
 
 
@@ -449,12 +462,23 @@ function! s:WriteWordList(filetype) "{{{3
 endf
 
 
+function! likelycomplete#SingleSelect_tlib(prompt, list, ...) "{{{3
+    let args = ['s', a:prompt, a:list] + a:000
+    return call('tlib#input#List', args)
+endf
+
+
+function! likelycomplete#MultiSelect_tlib(prompt, list) "{{{3
+    return tlib#input#List('m', a:prompt, a:list)
+endf
+
+
 function! likelycomplete#RemoveWords(...) "{{{3
     let filetype = a:0 >= 1 && !empty(a:1) ? a:1 : s:GetFiletype()
     let data = get(g:likelycomplete#data.ft, filetype, {})
     if !empty(data)
         let words0 = sort(keys(data))
-        let words1 = tlib#input#List('m', 'Select obsolete words', words0)
+        let words1 = likelycomplete#MultiSelect_{g:likelycomplete#list_picker}('Select obsolete words', words0)
         if !empty(words1)
             for word in words1
                 call remove(data, word)
@@ -482,7 +506,7 @@ function! likelycomplete#SelectWord(base) "{{{3
     if g:likelycomplete#list_set_filter
         call add(handlers, {'filter': s:GetVFilter(a:base)})
     endif
-    let word = tlib#input#List('s', 'Select word:', words, handlers)
+    let word = likelycomplete#SingleSelect_{g:likelycomplete#list_picker}('Select word:', words, handlers)
     if empty(word)
         return a:base
     else

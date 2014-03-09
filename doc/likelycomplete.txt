@@ -43,6 +43,7 @@ Contents~
         g:likelycomplete#set_completefunc .... |g:likelycomplete#set_completefunc|
         g:likelycomplete#use_omnifunc ........ |g:likelycomplete#use_omnifunc|
         g:likelycomplete#use_fuzzy_matches ... |g:likelycomplete#use_fuzzy_matches|
+        g:likelycomplete#list_picker ......... |g:likelycomplete#list_picker|
         g:likelycomplete#other_sources ....... |g:likelycomplete#other_sources|
         g:likelycomplete#data_cfile .......... |g:likelycomplete#data_cfile|
         g:likelycomplete#data ................ |g:likelycomplete#data|
@@ -59,6 +60,8 @@ Contents~
         likelycomplete#EnsureFiletype ........ |likelycomplete#EnsureFiletype()|
         likelycomplete#RemoveFiletype ........ |likelycomplete#RemoveFiletype()|
         likelycomplete#SaveFiletypes ......... |likelycomplete#SaveFiletypes()|
+        likelycomplete#SingleSelect_tlib ..... |likelycomplete#SingleSelect_tlib()|
+        likelycomplete#MultiSelect_tlib ...... |likelycomplete#MultiSelect_tlib()|
         likelycomplete#RemoveWords ........... |likelycomplete#RemoveWords()|
         likelycomplete#MapSelectWord ......... |likelycomplete#MapSelectWord()|
         likelycomplete#SelectWord ............ |likelycomplete#SelectWord()|
@@ -78,19 +81,21 @@ g:likelycomplete_filetypes     (default: [])
     If you want to permanently disable LikelyComplete for a filetype, 
     it isn't sufficient to remove the filetype name from this 
     variable. You should also call |likelycomplete#RemoveFiletype()| 
-    to fully remove cached information for this filetype.
+    to fully remove any cached information for this filetype.
 
-                                                        *b:likelycomplete_filetype*
+                                                      *b:likelycomplete_filetype*
     If the variable b:likelycomplete_filetype is defined on FileType 
-    events, its value is used instead of 'filetype'. |:Likelycomplete| 
+    events, its value is used instead of 'filetype'. LikelyComplete 
     is automatically enabled for all buffers where the 
-    b:likelycomplete_filetype is defined.
+    b:likelycomplete_filetype is defined. This variable can be used to 
+    generate project-specific word lists.
 
                                                     *LikelycompleteSetupFiletype()*
 LikelycompleteSetupFiletype(filetype)
 
                                                     *:Likelycomplete*
 :Likelycomplete [NAME=VALUE ...]
+    Enable LikelyComplete for the current buffer.
     The following arguments are supported:
       maxsize ......... filetype-specific value for 
                         |g:likelycomplete#maxsize|
@@ -154,6 +159,17 @@ g:likelycomplete#use_fuzzy_matches (default: 0)
     and |:Likelycompletemapcompletefunc|.
     In order to also use fuzzy search in the list picker, also set 
     |g:tlib#input#filter_mode| to 'fuzzy'.
+
+                                                    *g:likelycomplete#list_picker*
+g:likelycomplete#list_picker   (default: 'tlib')
+    VIM plugin developers can add support for "list pickers" other 
+    than tlib by defining the following functions:
+
+    1. Select a single item from a list:
+        likelycomplete#SingleSelect_{TYPE}(prompt, list, ?handlers=[])
+
+    2. Select multiple item from a list:
+        likelycomplete#MultiSelect_{TYPE}(prompt, list)
 
                                                     *g:likelycomplete#other_sources*
 g:likelycomplete#other_sources (default: [])
@@ -220,6 +236,12 @@ likelycomplete#RemoveFiletype(filetype)
 
                                                     *likelycomplete#SaveFiletypes()*
 likelycomplete#SaveFiletypes()
+
+                                                    *likelycomplete#SingleSelect_tlib()*
+likelycomplete#SingleSelect_tlib(prompt, list, ...)
+
+                                                    *likelycomplete#MultiSelect_tlib()*
+likelycomplete#MultiSelect_tlib(prompt, list)
 
                                                     *likelycomplete#RemoveWords()*
 likelycomplete#RemoveWords(...)
