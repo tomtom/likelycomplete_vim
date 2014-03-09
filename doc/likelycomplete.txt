@@ -49,6 +49,7 @@ Contents~
         g:likelycomplete#options_vim ......... |g:likelycomplete#options_vim|
         g:likelycomplete#maxsize ............. |g:likelycomplete#maxsize|
         g:likelycomplete#word_minlength ...... |g:likelycomplete#word_minlength|
+        g:likelycomplete#once_per_file ....... |g:likelycomplete#once_per_file|
         g:likelycomplete#base ................ |g:likelycomplete#base|
         g:likelycomplete#max ................. |g:likelycomplete#max|
         likelycomplete#SetupFiletype ......... |likelycomplete#SetupFiletype()|
@@ -176,8 +177,13 @@ g:likelycomplete#maxsize       (default: 5000)
 g:likelycomplete#word_minlength (default: 3)
     Minimum length of words.
 
+                                                    *g:likelycomplete#once_per_file*
+g:likelycomplete#once_per_file (default: 0)
+    If true, count a word only once per file. By default, N occurences 
+    of word X in a buffer will be counted as N times.
+
                                                     *g:likelycomplete#base*
-g:likelycomplete#base          (default: 1)
+g:likelycomplete#base          (default: 50)
     The base number of observations.
     Also the number of files, you can edit without removing a word 
     that was't included in any of these files.
