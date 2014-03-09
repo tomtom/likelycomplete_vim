@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    74
+" @Revision:    75
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -41,7 +41,7 @@ augroup END
 
 function! LikelycompleteSetupFiletype(filetype) "{{{3
     exec 'autocmd! LikelyComplete FileType' a:filetype
-    exec 'autocmd LikelyComplete FileType' a:filetype 'if exists("b:likelycomplete_filetype") | call likelycomplete#SetupBuffer('. string(a:filetype) .', expand("<abuf>")) | endif'
+    exec 'autocmd LikelyComplete FileType' a:filetype 'if !exists("b:likelycomplete_filetype") | call likelycomplete#SetupBuffer('. string(a:filetype) .', expand("<abuf>")) | endif'
 endf
 
 
