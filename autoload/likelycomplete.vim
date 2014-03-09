@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    314
+" @Revision:    325
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -96,13 +96,20 @@ if !exists('g:likelycomplete#word_minlength')
 endif
 
 
+if !exists('g:likelycomplete#once_per_file')
+    " If true, count a word only once per file. By default, N occurences 
+    " of word X in a buffer will be counted as N times.
+    let g:likelycomplete#once_per_file = 0   "{{{2
+endif
+
+
 if !exists('g:likelycomplete#base')
     " The base number of observations.
     " Also the number of files, you can edit without removing a word 
     " that was't included in any of these files.
     " If this value is too low, new words won't get a chance to be 
     " included in the list.
-    let g:likelycomplete#base = 1   "{{{2
+    let g:likelycomplete#base = 50   "{{{2
 endif
 
 
@@ -374,6 +381,11 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
         let wordds = {}
         for word in words
             let wordds[word] = 1
+        endfor
+        if g:likelycomplete#once_per_file
+            let words = keys(wordds)
+        endif
+        for word in words
             if has_key(data, word)
                 let obs = data[word].obs
                 if obs < g:likelycomplete#max
