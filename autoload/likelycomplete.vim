@@ -44,6 +44,15 @@ if !exists('g:likelycomplete#use_omnifunc')
 endif
 
 
+if !exists('g:likelycomplete#match_beginning')
+    " If true, matches must match the beginning of a word -- this is 
+    " only relevant to |:Likelycompletemapselect| and 
+    " |:Likelycompletemapcompletefunc|. Matches for |i_Ctrl-P| must 
+    " always match the beginning of a word.
+    let g:likelycomplete#match_beginning = 0   "{{{2
+endif
+
+
 if !exists('g:likelycomplete#use_fuzzy_matches')
     " If true, use fuzzy matches for |:Likelycompletemapselect| 
     " and |:Likelycompletemapcompletefunc|.
