@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    351
+" @Revision:    394
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -24,7 +24,7 @@ if !exists('g:likelycomplete#select_imap')
     " The default map for |:Likelycompletemapselect|.
     " If non-empty, enable |:Likelycompletemapselect| for all enabled 
     " filetypes.
-    let g:likelycomplete#select_imap = ''   "{{{2
+    let g:likelycomplete#select_imap = empty(maparg('<C-S-Space>', 'i'))? '<C-S-Space>' : ''  "{{{2
 endif
 
 
