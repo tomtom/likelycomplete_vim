@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    75
+" @Revision:    82
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -53,15 +53,8 @@ unlet! s:ft
 
 " :display: :Likelycomplete [NAME=VALUE ...]
 " Enable LikelyComplete for the current buffer.
-" The following arguments are supported:
-"   maxsize ......... filetype-specific value for 
-"                     |g:likelycomplete#maxsize|
-"   keyword_rx ...... Alternative |regexp| for |\k|
-"   strip_comments .. Remove whole-line comments (not supported for all filetypes)
-"   strip_strings ... Remove strings
-"   strip_numbers ... Remove numbers
-"   strip_rx ........ Remove matching text from lines
-"   exclude_lines_rx .. Exclude lines matching this |regexp|
+" See |g:likelycomplete#options| for a list of supported key-value 
+" arguments.
 command! -nargs=? Likelycomplete call likelycomplete#SetupFiletype(&filetype, likelycomplete#String2Args(<q-args>))
 
 

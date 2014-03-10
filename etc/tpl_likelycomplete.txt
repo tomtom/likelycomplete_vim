@@ -4,9 +4,12 @@
 Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
 plugin observes any buffer of that filetype. It collects the words, 
 ranks them based on the probability of their occurrences (sort of) and 
-compiles a dictionary file that is fed to 'complete'. This way any words 
-that are frequently used in files of an enabled filetype, should be 
-offered in the completion list (see |i_CTRL-P|).
+compiles a dictionary file that is fed to 'complete'. Any words that are 
+frequently used in files of enabled filetypes, are offered in the 
+completion list (see |i_CTRL-P|).
+
+The word list on disk is updated when leaving vim. I could take a few 
+editing sessions to get at a usable word list.
 
 
 -----------------------------------------------------------------------
