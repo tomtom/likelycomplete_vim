@@ -89,11 +89,36 @@ if !exists('g:likelycomplete#data_cfile')
 endif
 
 
-let g:likelycomplete#data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})   "{{{2
+let s:likelycomplete_data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})   "{{{2
+" let g:likelycomplete#data = s:likelycomplete_data " DBG
+
+
+if !exists('g:likelycomplete#options')
+    " The following keys are supported:
+    "   exclude_lines_rx ... Exclude lines matching this |regexp|
+    "   strip_comments ..... Remove comments and any trailing text (not 
+    "                        supported for all filetypes; requires 'cms' to be 
+    "                        set)
+    "   strip_strings ...... Remove strings from lines
+    "   strip_numbers ...... Remove numbers from lines
+    "   strip_rx ........... Remove matching text from lines
+    "
+    " The following keys can override global parameters:
+    "   other_sources ...... Override |g:likelycomplete#other_sources|
+    "   set_completefunc ... Override |g:likelycomplete#set_completefunc|
+    "   use_omnifunc ....... Override |g:likelycomplete#use_omnifunc|
+    "   use_fuzzy_matches .. Override |g:likelycomplete#use_fuzzy_matches|
+    "   match_beginning .... Override |g:likelycomplete#match_beginning|
+    "   maxsize ............ Override |g:likelycomplete#maxsize|
+    "   once_per_file ...... Override |g:likelycomplete#once_per_file|
+    "   word_minlength ..... Override |g:likelycomplete#word_minlength|
+    let g:likelycomplete#options = {}
+endif
 
 
 if !exists('g:likelycomplete#options_vim')
-    " Some custom options for the vim filetype.
+    " Some custom options for the vim filetype (see 
+    " |g:likelycomplete#options|).
     " Anything following a single or double quote is removed. This will 
     " make sure that all strings an comments are removed -- at the cost 
     " of also removing eligible identifiers following a string.
@@ -142,7 +167,7 @@ endif
 
 
 function! likelycomplete#SetupFiletype(filetype, options) "{{{3
-    call likelycomplete#EnsureFiletype(a:filetype)
+    call likelycomplete#EnsureFiletype(a:filetype, a:options)
     call likelycomplete#SetupBuffer(a:filetype, bufnr('%'))
 endf
 
@@ -162,7 +187,7 @@ endf
 
 function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
     " TLogVAR a:bufnr
-    if !likelycomplete#EnsureFiletype(a:filetype)
+    if !likelycomplete#EnsureFiletype(a:filetype, {})
         call s:SetDerivedOptions(a:filetype)
     endif
     call s:SetupComplete(a:filetype)
@@ -174,11 +199,11 @@ endf
 
 
 function! likelycomplete#Config(filetype, options) "{{{3
-    if !has_key(g:likelycomplete#data.ft_options, a:filetype)
-        let g:likelycomplete#data.ft_options[a:filetype] = {}
+    if !has_key(s:likelycomplete_data.ft_options, a:filetype)
+        let s:likelycomplete_data.ft_options[a:filetype] = {}
     endif
     if !empty(a:options)
-        call extend(g:likelycomplete#data.ft_options[a:filetype], a:options)
+        call extend(s:likelycomplete_data.ft_options[a:filetype], a:options)
     endif
     call s:SetDerivedOptions(a:filetype)
 endf
@@ -192,16 +217,16 @@ endf
 function! s:SetDerivedOptions(filetype) "{{{3
     " TLogVAR a:filetype
     if s:GetFiletype() == a:filetype
-        let ft_options = g:likelycomplete#data.ft_options[a:filetype]
+        let ft_options = s:likelycomplete_data.ft_options[a:filetype]
         if !has_key(ft_options, 'cms')
-            let g:likelycomplete#data.ft_options[a:filetype].cms = &l:cms
+            let s:likelycomplete_data.ft_options[a:filetype].cms = &l:cms
         endif
-        if !empty(&l:iskeyword) && (!has_key(ft_options, 'split_rx') || get(ft_options, 'iskeyword', '') != &l:iskeyword)
-            let g:likelycomplete#data.ft_options[a:filetype].iskeyword = &l:iskeyword
-            let g:likelycomplete#data.ft_options[a:filetype].split_rx = s:GetKeywordRx(&l:iskeyword, 1)
-            " TLogVAR &l:iskeyword, g:likelycomplete#data.ft_options[a:filetype].split_rx
+        if !empty(&l:iskeyword) && (!has_key(ft_options, '_split_rx') || get(ft_options, '_iskeyword', '') != &l:iskeyword)
+            let s:likelycomplete_data.ft_options[a:filetype]._iskeyword = &l:iskeyword
+            let s:likelycomplete_data.ft_options[a:filetype]._split_rx = s:GetKeywordRx(&l:iskeyword, 1)
+            " TLogVAR &l:iskeyword, s:likelycomplete_data.ft_options[a:filetype]._split_rx
         endif
-        " TLogVAR g:likelycomplete#data.ft_options[a:filetype]
+        " TLogVAR s:likelycomplete_data.ft_options[a:filetype]
     endif
 endf
 
@@ -277,11 +302,11 @@ function! s:KeywordPartRx(subparts, inverse) "{{{3
 endf
 
 
-function! likelycomplete#EnsureFiletype(filetype) "{{{3
-    if !has_key(g:likelycomplete#data.ft, a:filetype)
+function! likelycomplete#EnsureFiletype(filetype, options) "{{{3
+    if !has_key(s:likelycomplete_data.ft, a:filetype)
         " TLogVAR a:filetype
-        let g:likelycomplete#data.ft[a:filetype] = {}
-        call likelycomplete#Config(a:filetype, {})
+        let s:likelycomplete_data.ft[a:filetype] = {}
+        call likelycomplete#Config(a:filetype, a:options)
         call LikelycompleteSetupFiletype(a:filetype)
         call likelycomplete#SaveFiletypes()
         return 1
@@ -293,8 +318,8 @@ endf
 
 function! likelycomplete#RemoveFiletype(filetype) "{{{3
     " TLogVAR a:filetype
-    unlet! g:likelycomplete#data.ft[a:filetype]
-    unlet! g:likelycomplete#data.ft_options[a:filetype]
+    unlet! s:likelycomplete_data.ft[a:filetype]
+    unlet! s:likelycomplete_data.ft_options[a:filetype]
     let fname = s:WordListFilename(a:filetype)
     if filereadable(fname)
         call delete(fname)
@@ -305,7 +330,7 @@ endf
 
 
 function! likelycomplete#SaveFiletypes() "{{{3
-    call tlib#persistent#Save(g:likelycomplete#data_cfile, g:likelycomplete#data)
+    call tlib#persistent#Save(g:likelycomplete#data_cfile, s:likelycomplete_data)
 endf
 
 
@@ -324,23 +349,25 @@ function! s:SetupComplete(filetype) "{{{3
     if filereadable(fname)
         let opt = 'k'. fname
         if stridx(&l:complete, opt) == -1
-            exec 'setl complete+='. escape(opt, ' ,')
+            exec 'setl complete+='. escape(opt, ' ,\')
             " TLogVAR &l:complete
         endif
         if stridx(&l:dictionary, fname) == -1
-            exec 'setl dictionary+='. escape(fname, ' ,')
+            exec 'setl dictionary+='. escape(fname, ' ,\')
             " TLogVAR &l:dictionary
         endif
     endif
-    if g:likelycomplete#set_completefunc
+    let ft_options = s:FtOptions(a:filetype)
+    if get(ft_options, 'set_completefunc', g:likelycomplete#set_completefunc)
         call likelycomplete#SetComleteFunc()
     endif
 endf
 
 
 function! s:FtOptions(filetype) "{{{3
-    let ft_options = get(g:likelycomplete#data.ft_options, a:filetype, {})
+    let ft_options = get(s:likelycomplete_data.ft_options, a:filetype, {})
     " TLogVAR 1, ft_options
+    call extend(ft_options, g:likelycomplete#options)
     if exists('g:likelycomplete#options_'. a:filetype)
         call extend(ft_options, g:likelycomplete#options_{a:filetype})
     endif
@@ -377,8 +404,7 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
         " TLogVAR 3, len(lines)
     endif
     if get(ft_options, 'strip_comments', 1) && has_key(ft_options, 'cms')
-        let cms_rx = substitute(ft_options.cms, '%s', '.\\{-}', '')
-        let cms_rx = '^\s*'. cms_rx .'$'
+        let cms_rx = '\V'. substitute(escape(ft_options.cms, '\'), '%s', '\\.\\{-}', '') .'\.\*\$'
         " TLogVAR cms_rx
         let lines = filter(lines, 'v:val !~ cms_rx')
         " TLogVAR 4, len(lines)
@@ -387,26 +413,26 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     if get(ft_options, 'strip_strings', 1)
         let text = substitute(text, '\([''"]\).\{-}\1', ' ', 'g')
     endif
-    let split_rx = get(ft_options, 'split_rx', '\W\+')
-    let @+ = split_rx
-    " TLogVAR split_rx
-    let words = split(text, split_rx)
+    let _split_rx = get(ft_options, '_split_rx', '\W\+')
+    " TLogVAR _split_rx
+    let words = split(text, _split_rx)
     " TLogVAR words
     " TLogVAR 1, len(words)
-    let words = filter(words, '!empty(v:val) && strwidth(v:val) >= g:likelycomplete#word_minlength')
+    let word_minlength = get(ft_options, 'word_minlength', g:likelycomplete#word_minlength)
+    let words = filter(words, '!empty(v:val) && strwidth(v:val) >= word_minlength')
     " TLogVAR 2, len(words)
     if get(ft_options, 'strip_numbers', 1)
         let words = filter(words, 'v:val !~ ''^-\?\d\+\(\.\d\+\)\?$''')
         " TLogVAR 3, len(words)
     endif
     " TLogVAR words
-    let data = g:likelycomplete#data.ft[a:filetype]
+    let data = s:likelycomplete_data.ft[a:filetype]
     if !empty(words)
         let wordds = {}
         for word in words
             let wordds[word] = 1
         endfor
-        if g:likelycomplete#once_per_file
+        if get(ft_options, 'once_per_file', g:likelycomplete#once_per_file)
             let words = keys(wordds)
         endif
         for word in words
@@ -428,7 +454,7 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
                 let data[word].obs -= 1
             endif
         endfor
-        let g:likelycomplete#data.ft[a:filetype] = data
+        let s:likelycomplete_data.ft[a:filetype] = data
         if !s:WriteWordList(a:filetype)
             call likelycomplete#SaveFiletypes()
         endif
@@ -439,7 +465,7 @@ endf
 
 function! s:WriteWordList(filetype) "{{{3
     " TLogVAR a:filetype
-    let data = get(g:likelycomplete#data.ft, a:filetype, {})
+    let data = get(s:likelycomplete_data.ft, a:filetype, {})
     let saved_data = 0
     if !empty(data)
         let ft_options = s:FtOptions(a:filetype)
@@ -462,7 +488,7 @@ function! s:WriteWordList(filetype) "{{{3
             for word in truncated
                 call remove(data, word)
             endfor
-            let g:likelycomplete#data.ft[a:filetype] = data
+            let s:likelycomplete_data.ft[a:filetype] = data
             call likelycomplete#SaveFiletypes()
             let saved_data = 1
         endif
@@ -484,7 +510,7 @@ endf
 
 function! likelycomplete#RemoveWords(...) "{{{3
     let filetype = a:0 >= 1 && !empty(a:1) ? a:1 : s:GetFiletype()
-    let data = get(g:likelycomplete#data.ft, filetype, {})
+    let data = get(s:likelycomplete_data.ft, filetype, {})
     if !empty(data)
         let words0 = sort(keys(data))
         let words1 = likelycomplete#MultiSelect_{g:likelycomplete#list_picker}('Select obsolete words', words0)
@@ -492,7 +518,7 @@ function! likelycomplete#RemoveWords(...) "{{{3
             for word in words1
                 call remove(data, word)
             endfor
-            let g:likelycomplete#data.ft[filetype] = data
+            let s:likelycomplete_data.ft[filetype] = data
             if !s:WriteWordList(filetype)
                 call likelycomplete#SaveFiletypes()
             endif
@@ -510,10 +536,11 @@ endf
 
 
 function! likelycomplete#SelectWord(base) "{{{3
-    let words = likelycomplete#GetCompletions(s:GetFiletype(), a:base)
+    let filetype = s:GetFiletype()
+    let words = likelycomplete#GetCompletions(filetype, a:base)
     let handlers = []
     if g:likelycomplete#list_set_filter
-        call add(handlers, {'filter': s:GetVFilter(a:base)})
+        call add(handlers, {'filter': s:GetVFilter(filetype, a:base)})
     endif
     let word = likelycomplete#SingleSelect_{g:likelycomplete#list_picker}('Select word:', words, handlers)
     if empty(word)
@@ -553,7 +580,8 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
     if exists('b:likelycomplete_completefunc')
         call add(fns, b:likelycomplete_completefunc)
     endif
-    if g:likelycomplete#use_omnifunc && exists('+omnifunc')
+    let ft_options = s:FtOptions(a:filetype)
+    if exists('+omnifunc') && get(ft_options, 'use_omnifunc', g:likelycomplete#use_omnifunc)
         call add(fns, &l:omnifunc)
     endif
     for fn in fns
@@ -561,7 +589,7 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
             let completions += call(fn, [0, a:base])
         endif
     endfor
-    for var in g:likelycomplete#other_sources
+    for var in get(ft_options, 'other_sources', g:likelycomplete#other_sources)
         if exists(var) && !empty(var)
             exec 'let varval =' var
             if type(varval) == 1
@@ -578,22 +606,26 @@ function! likelycomplete#GetCompletions(filetype, base) "{{{3
         endif
     endfor
     if !empty(a:base)
-        let rx = s:GetVFilter(a:base)
+        let rx = s:GetVFilter(a:filetype, a:base)
         let completions = filter(completions, 'v:val =~ rx')
     endif
     return completions
 endf
 
 
-function! s:GetVFilter(base) "{{{3
+function! s:GetVFilter(filetype, base) "{{{3
     if &smartcase && a:base =~ '\u'
-        let rx = '\C\V\^'
+        let rx = '\C\V'
     elseif &ignorecase
-        let rx = '\c\V\^'
+        let rx = '\c\V'
     else
-        let rx = '\C\V\^'
+        let rx = '\C\V'
     endif
-    if g:likelycomplete#use_fuzzy_matches
+    let ft_options = s:FtOptions(a:filetype)
+    if get(ft_options, 'match_beginning', g:likelycomplete#match_beginning)
+        let rx .= '\^'
+    endif
+    if get(ft_options, 'use_fuzzy_matches', g:likelycomplete#use_fuzzy_matches)
         let rx .= join(map(split(a:base, '\zs'), 'escape(v:val, ''\'')'), '\.\{-}')
     else
         let rx .= escape(a:base, '\')
