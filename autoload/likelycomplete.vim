@@ -47,9 +47,9 @@ endif
 if !exists('g:likelycomplete#use_fuzzy_matches')
     " If true, use fuzzy matches for |:Likelycompletemapselect| 
     " and |:Likelycompletemapcompletefunc|.
-    " In order to also use fuzzy search in the list picker, also set 
-    " |g:tlib#input#filter_mode| to 'fuzzy'.
-    let g:likelycomplete#use_fuzzy_matches = 0   "{{{2
+    " If you really believe in fuzzy matching, you might want to 
+    " consider also setting |g:tlib#input#filter_mode| to 'fuzzy'.
+    let g:likelycomplete#use_fuzzy_matches = 1   "{{{2
 endif
 
 
