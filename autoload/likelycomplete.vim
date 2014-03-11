@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    567
+" @Revision:    568
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -14,6 +14,8 @@ endif
 
 if !exists('g:likelycomplete#experimental')
     " If true, enable some experimental options.
+    " Some of these experimental options may cause minor interruptions, 
+    " delays, and increased memory usage.
     let g:likelycomplete#experimental = 0   "{{{2
 endif
 

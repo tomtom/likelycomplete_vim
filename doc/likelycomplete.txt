@@ -129,6 +129,8 @@ autoload/likelycomplete.vim~
                                                     *g:likelycomplete#experimental*
 g:likelycomplete#experimental  (default: 0)
     If true, enable some experimental options.
+    Some of these experimental options may cause minor interruptions, 
+    delays, and increased memory usage.
 
                                                     *g:likelycomplete#list_set_filter*
 g:likelycomplete#list_set_filter (default: 0)
