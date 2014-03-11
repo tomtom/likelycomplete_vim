@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    557
+" @Revision:    567
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -641,8 +641,8 @@ endf
 
 
 function! likelycomplete#SetComleteFunc() "{{{3
-    call s:EnsureFiletype()
-    if exists('+completefunc')
+    if exists('+completefunc') && &l:completefunc != 'likelycomplete#Complete'
+        call s:EnsureFiletype()
         let b:likelycomplete_completefunc = &l:completefunc
         setl completefunc=likelycomplete#Complete
     endif
@@ -668,17 +668,26 @@ function! likelycomplete#Complete(findstart, base) "{{{3
         let start = match(line, '\k\+$')
         return start
     else
-        return s:GetCompletions(s:GetFiletype(), a:base, 1)
+        try
+            return s:GetCompletions(s:GetFiletype(), a:base, 1)
+        catch
+            echohl Error
+            echom v:exception
+            echohl NONE
+            return []
+        endtry
     endif
 endf
 
 
 function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
+    " TLogVAR a:filetype, a:base, a:check_auto_complete
     let completions = []
     let ft_options = s:FtOptions(a:filetype)
     let fname = s:WordListFilename(a:filetype)
     if filereadable(fname)
         let completions += readfile(fname)
+        " TLogVAR 1, len(completions)
     endif
     let fns = []
     if exists('b:likelycomplete_completefunc')
@@ -689,7 +698,9 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
     endif
     for fn in fns
         if !empty(fn)
+            " TLogVAR fn
             let completions += call(fn, [0, a:base])
+            " TLogVAR 2, len(completions)
         endif
     endfor
     for var in get(ft_options, 'other_sources', g:likelycomplete#other_sources)
@@ -705,6 +716,7 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
                 throw 'LikelyComplete: Unsupported type for var '. var
             endif
             let completions += words
+            " TLogVAR 3, len(completions)
             unlet varval
         endif
     endfor
@@ -712,12 +724,17 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
         let lbase = len(a:base)
         let rx = s:GetVFilter(a:filetype, a:base)
         let completions = filter(completions, 'len(v:val) > lbase && v:val =~ rx')
+        " TLogVAR 4, len(completions)
     endif
+    " TLogVAR ft_options
     if get(ft_options, 'assess_context', g:likelycomplete#assess_context)
         let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
+        " TLogVAR 5, len(completions)
     endif
+    " TLogVAR ft_options
     if a:check_auto_complete && get(ft_options, 'auto_complete', g:likelycomplete#auto_complete)
         let completions = insert(completions, a:base)
+        " TLogVAR 6, len(completions)
     endif
     return completions
 endf
