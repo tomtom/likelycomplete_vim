@@ -4,9 +4,12 @@
 Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
 plugin observes any buffer of that filetype. It collects the words, 
 ranks them based on the probability of their occurrences (sort of) and 
-compiles a dictionary file that is fed to 'complete'. This way any words 
-that are frequently used in files of an enabled filetype, should be 
-offered in the completion list (see |i_CTRL-P|).
+compiles a dictionary file that is fed to 'complete'. Any words that are 
+frequently used in files of enabled filetypes, are offered in the 
+completion list (see |i_CTRL-P|).
+
+The word list on disk is updated when leaving vim. I could take a few 
+editing sessions to get at a usable word list.
 
 
 -----------------------------------------------------------------------
@@ -25,8 +28,8 @@ Also available via git: http://github.com/tomtom/likelycomplete_vim/
 
 Post-Install~
 
-See |g:likelycomplete_filetypes| for how to enable LikelyComplete for a 
-certain filetype.
+Users have to set |g:likelycomplete_filetypes| in |vimrc| in order to enable 
+LikelyComplete for certain filetypes.
 
 
 ========================================================================
@@ -38,28 +41,28 @@ Contents~
         :Likelycompleteremovewords ........... |:Likelycompleteremovewords|
         :Likelycompletemapcompletefunc ....... |:Likelycompletemapcompletefunc|
         :Likelycompletemapselect ............. |:Likelycompletemapselect|
+        g:likelycomplete#experimental ........ |g:likelycomplete#experimental|
         g:likelycomplete#list_set_filter ..... |g:likelycomplete#list_set_filter|
         g:likelycomplete#select_imap ......... |g:likelycomplete#select_imap|
         g:likelycomplete#set_completefunc .... |g:likelycomplete#set_completefunc|
+        g:likelycomplete#auto_complete ....... |g:likelycomplete#auto_complete|
         g:likelycomplete#use_omnifunc ........ |g:likelycomplete#use_omnifunc|
+        g:likelycomplete#match_beginning ..... |g:likelycomplete#match_beginning|
         g:likelycomplete#use_fuzzy_matches ... |g:likelycomplete#use_fuzzy_matches|
         g:likelycomplete#list_picker ......... |g:likelycomplete#list_picker|
         g:likelycomplete#other_sources ....... |g:likelycomplete#other_sources|
         g:likelycomplete#data_cfile .......... |g:likelycomplete#data_cfile|
-        g:likelycomplete#data ................ |g:likelycomplete#data|
         g:likelycomplete#options_vim ......... |g:likelycomplete#options_vim|
         g:likelycomplete#maxsize ............. |g:likelycomplete#maxsize|
         g:likelycomplete#word_minlength ...... |g:likelycomplete#word_minlength|
         g:likelycomplete#once_per_file ....... |g:likelycomplete#once_per_file|
+        g:likelycomplete#assess_context ...... |g:likelycomplete#assess_context|
         g:likelycomplete#base ................ |g:likelycomplete#base|
         g:likelycomplete#max ................. |g:likelycomplete#max|
-        likelycomplete#SetupFiletype ......... |likelycomplete#SetupFiletype()|
         likelycomplete#String2Args ........... |likelycomplete#String2Args()|
+        likelycomplete#SetupFiletype ......... |likelycomplete#SetupFiletype()|
         likelycomplete#SetupBuffer ........... |likelycomplete#SetupBuffer()|
-        likelycomplete#Config ................ |likelycomplete#Config()|
-        likelycomplete#EnsureFiletype ........ |likelycomplete#EnsureFiletype()|
         likelycomplete#RemoveFiletype ........ |likelycomplete#RemoveFiletype()|
-        likelycomplete#SaveFiletypes ......... |likelycomplete#SaveFiletypes()|
         likelycomplete#SingleSelect_tlib ..... |likelycomplete#SingleSelect_tlib()|
         likelycomplete#MultiSelect_tlib ...... |likelycomplete#MultiSelect_tlib()|
         likelycomplete#RemoveWords ........... |likelycomplete#RemoveWords()|
@@ -67,7 +70,6 @@ Contents~
         likelycomplete#SelectWord ............ |likelycomplete#SelectWord()|
         likelycomplete#SetComleteFunc ........ |likelycomplete#SetComleteFunc()|
         likelycomplete#Complete .............. |likelycomplete#Complete()|
-        likelycomplete#GetCompletions ........ |likelycomplete#GetCompletions()|
 
 
 ========================================================================
@@ -96,15 +98,10 @@ LikelycompleteSetupFiletype(filetype)
                                                     *:Likelycomplete*
 :Likelycomplete [NAME=VALUE ...]
     Enable LikelyComplete for the current buffer.
-    The following arguments are supported:
-      maxsize ......... filetype-specific value for 
-                        |g:likelycomplete#maxsize|
-      keyword_rx ...... Alternative |regexp| for |\k|
-      strip_comments .. Remove whole-line comments (not supported for all filetypes)
-      strip_strings ... Remove strings
-      strip_numbers ... Remove numbers
-      strip_rx ........ Remove matching text from lines
-      exclude_lines_rx .. Exclude lines matching this |regexp|
+    See |g:likelycomplete#options| for a list of supported key-value
+    arguments.
+    In general, the plugin should be enabled by setting 
+    |g:likelycomplete_filetypes|.
 
                                                     *:Likelycompleteremovewords*
 :Likelycompleteremovewords [FILETYPE]
@@ -129,6 +126,10 @@ LikelycompleteSetupFiletype(filetype)
 ========================================================================
 autoload/likelycomplete.vim~
 
+                                                    *g:likelycomplete#experimental*
+g:likelycomplete#experimental  (default: 0)
+    If true, enable some experimental options.
+
                                                     *g:likelycomplete#list_set_filter*
 g:likelycomplete#list_set_filter (default: 0)
     If true, the part of the words matching the the base text will be 
@@ -136,29 +137,45 @@ g:likelycomplete#list_set_filter (default: 0)
     If false, the setting of 'smartcase' is ignored.
 
                                                     *g:likelycomplete#select_imap*
-g:likelycomplete#select_imap   (default: '')
+g:likelycomplete#select_imap   (default: empty(maparg('<C-S-Space>', 'i'))? '<C-S-Space>' : '')
     The default map for |:Likelycompletemapselect|.
     If non-empty, enable |:Likelycompletemapselect| for all enabled 
     filetypes.
 
                                                     *g:likelycomplete#set_completefunc*
-g:likelycomplete#set_completefunc (default: 0)
+g:likelycomplete#set_completefunc (default: g:likelycomplete#experimental)
     If true, set 'completefunc' for supported buffers. The results of 
     the old completefunc will be incorporated.
 
+                                                    *g:likelycomplete#auto_complete*
+g:likelycomplete#auto_complete (default: g:likelycomplete#experimental ? 2 : 0)
+    The number of characters after which auto-completion should be 
+    invoked. If 0, auto-completion is disabled.
+
+    This option requires |g:likelycomplete#set_completefunc| to be 
+    true or |:Likelycompletemapcompletefunc| to be called.
+
                                                     *g:likelycomplete#use_omnifunc*
 g:likelycomplete#use_omnifunc  (default: 0)
-    If true, |likelycomplete#GetCompletions()| also offers completions 
-    from 'omnifunc'.
+    If true, include completions from 'omnifunc'.
     Please be aware that some omnifunc take their time (at least on 
     first invocation).
+    This is only used in conjunction with |:Likelycompletemapselect| 
+    and |:Likelycompletemapcompletefunc|.
+
+                                                    *g:likelycomplete#match_beginning*
+g:likelycomplete#match_beginning (default: 0)
+    If true, matches must match the beginning of a word -- this is 
+    only relevant to |:Likelycompletemapselect| and 
+    |:Likelycompletemapcompletefunc|. Matches for |i_Ctrl-P| must 
+    always match the beginning of a word.
 
                                                     *g:likelycomplete#use_fuzzy_matches*
-g:likelycomplete#use_fuzzy_matches (default: 0)
+g:likelycomplete#use_fuzzy_matches (default: 1)
     If true, use fuzzy matches for |:Likelycompletemapselect| 
     and |:Likelycompletemapcompletefunc|.
-    In order to also use fuzzy search in the list picker, also set 
-    |g:tlib#input#filter_mode| to 'fuzzy'.
+    If you really believe in fuzzy matching, you might want to 
+    consider also setting |g:tlib#input#filter_mode| to 'fuzzy'.
 
                                                     *g:likelycomplete#list_picker*
 g:likelycomplete#list_picker   (default: 'tlib')
@@ -181,12 +198,10 @@ g:likelycomplete#other_sources (default: [])
                                                     *g:likelycomplete#data_cfile*
 g:likelycomplete#data_cfile    (default: tlib#persistent#Filename('likelycomplete', 'data', 1))
 
-                                                    *g:likelycomplete#data*
-g:likelycomplete#data          (default: tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}}))
-
                                                     *g:likelycomplete#options_vim*
 g:likelycomplete#options_vim   (default: {...})
-    Some custom options for the vim filetype.
+    Some custom options for the vim filetype (see 
+    |g:likelycomplete#options|).
     Anything following a single or double quote is removed. This will 
     make sure that all strings an comments are removed -- at the cost 
     of also removing eligible identifiers following a string.
@@ -204,6 +219,17 @@ g:likelycomplete#once_per_file (default: 0)
     If true, count a word only once per file. By default, N occurences 
     of word X in a buffer will be counted as N times.
 
+                                                    *g:likelycomplete#assess_context*
+g:likelycomplete#assess_context (default: g:likelycomplete#experimental && !g:likelycomplete#once_per_file ? 5 : 0)
+    The number of preceding words that should be taken into account 
+    when sorting the list of possible completions.
+    This is only used in conjunction with |:Likelycompletemapselect| 
+    and |:Likelycompletemapcompletefunc|.
+
+    CAUTION: This may cause a slow-down and increased memory use. This 
+    option only works properly if |g:likelycomplete#once_per_file| 
+    evaluates to false.
+
                                                     *g:likelycomplete#base*
 g:likelycomplete#base          (default: 50)
     The base number of observations.
@@ -216,26 +242,17 @@ g:likelycomplete#base          (default: 50)
 g:likelycomplete#max           (default: 10000)
     The maximum number of observations taken into account.
 
-                                                    *likelycomplete#SetupFiletype()*
-likelycomplete#SetupFiletype(filetype, options)
-
                                                     *likelycomplete#String2Args()*
 likelycomplete#String2Args(string)
+
+                                                    *likelycomplete#SetupFiletype()*
+likelycomplete#SetupFiletype(filetype, options)
 
                                                     *likelycomplete#SetupBuffer()*
 likelycomplete#SetupBuffer(filetype, bufnr)
 
-                                                    *likelycomplete#Config()*
-likelycomplete#Config(filetype, options)
-
-                                                    *likelycomplete#EnsureFiletype()*
-likelycomplete#EnsureFiletype(filetype)
-
                                                     *likelycomplete#RemoveFiletype()*
 likelycomplete#RemoveFiletype(filetype)
-
-                                                    *likelycomplete#SaveFiletypes()*
-likelycomplete#SaveFiletypes()
 
                                                     *likelycomplete#SingleSelect_tlib()*
 likelycomplete#SingleSelect_tlib(prompt, list, ...)
@@ -257,9 +274,6 @@ likelycomplete#SetComleteFunc()
 
                                                     *likelycomplete#Complete()*
 likelycomplete#Complete(findstart, base)
-
-                                                    *likelycomplete#GetCompletions()*
-likelycomplete#GetCompletions(filetype, base)
 
 
 
