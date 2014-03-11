@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    82
+" @Revision:    86
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -53,8 +53,10 @@ unlet! s:ft
 
 " :display: :Likelycomplete [NAME=VALUE ...]
 " Enable LikelyComplete for the current buffer.
-" See |g:likelycomplete#options| for a list of supported key-value 
+" See |g:likelycomplete#options| for a list of supported key-value
 " arguments.
+" In general, the plugin should be enabled by setting 
+" |g:likelycomplete_filetypes|.
 command! -nargs=? Likelycomplete call likelycomplete#SetupFiletype(&filetype, likelycomplete#String2Args(<q-args>))
 
 

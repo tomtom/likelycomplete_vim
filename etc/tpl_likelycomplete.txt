@@ -28,8 +28,8 @@ Also available via git: http://github.com/tomtom/likelycomplete_vim/
 
 Post-Install~
 
-See |g:likelycomplete_filetypes| for how to enable LikelyComplete for a 
-certain filetype.
+Users have to set |g:likelycomplete_filetypes| in |vimrc| in order to enable 
+LikelyComplete for certain filetypes.
 
 
 %s
