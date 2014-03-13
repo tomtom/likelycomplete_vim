@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    568
+" @Revision:    809
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -13,7 +13,10 @@ endif
 
 
 if !exists('g:likelycomplete#experimental')
-    " If true, enable some experimental options.
+    " If 1, enable some experimental options.
+    " If 2, enable even more experimental options that are not 
+    " recommended for everyday use.
+    "
     " Some of these experimental options may cause minor interruptions, 
     " delays, and increased memory usage.
     let g:likelycomplete#experimental = 0   "{{{2
@@ -39,7 +42,7 @@ endif
 if !exists('g:likelycomplete#set_completefunc')
     " If true, set 'completefunc' for supported buffers. The results of 
     " the old completefunc will be incorporated.
-    let g:likelycomplete#set_completefunc = g:likelycomplete#experimental   "{{{2
+    let g:likelycomplete#set_completefunc = g:likelycomplete#experimental >= 1   "{{{2
 endif
 
 
@@ -47,9 +50,16 @@ if !exists('g:likelycomplete#auto_complete')
     " The number of characters after which auto-completion should be 
     " invoked. If 0, auto-completion is disabled.
     "
+    "                                 *i_Ctrl-G_Ctrl-U* *likelycomplete-<c-g><c-u>*
+    " When auto-completion is enabled, a |imap| <c-g><c-u> is defined 
+    " that can be used to temporarily disable auto-completion in order 
+    " to perform some other kind of |ins-completion|. Auto-completion 
+    " will be re-enabled on the next |CompleteDone| event issued by that 
+    " completion.
+    "
     " This option requires |g:likelycomplete#set_completefunc| to be 
     " true or |:Likelycompletemapcompletefunc| to be called.
-    let g:likelycomplete#auto_complete = g:likelycomplete#experimental ? 2 : 0  "{{{2
+    let g:likelycomplete#auto_complete = g:likelycomplete#experimental >= 1 ? 2 : 0  "{{{2
 endif
 
 
@@ -85,11 +95,15 @@ if !exists('g:likelycomplete#list_picker')
     " VIM plugin developers can add support for "list pickers" other 
     " than tlib by defining the following functions:
     "
-    " 1. Select a single item from a list:
-    "     likelycomplete#SingleSelect_{TYPE}(prompt, list, ?handlers=[])
+    "     likelycomplete#ListPicker(type, prompt, list, base)
+    " 
+    " with
     "
-    " 2. Select multiple item from a list:
-    "     likelycomplete#MultiSelect_{TYPE}(prompt, list)
+    "   type .... 's' (select single item) or 'm' (select multiple items)
+    "   prompt .. A string
+    "   list .... A list
+    "   base .... A string that should be selected (may be ignored; see 
+    "             also |g:likelycomplete#list_set_filter|)
     let g:likelycomplete#list_picker = 'tlib'   "{{{2
 endif
 
@@ -176,7 +190,7 @@ if !exists('g:likelycomplete#assess_context')
     " CAUTION: This may cause a slow-down and increased memory use. This 
     " option only works properly if |g:likelycomplete#once_per_file| 
     " evaluates to false.
-    let g:likelycomplete#assess_context = g:likelycomplete#experimental && !g:likelycomplete#once_per_file ? 5 : 0   "{{{2
+    let g:likelycomplete#assess_context = g:likelycomplete#experimental >= 1 && !g:likelycomplete#once_per_file ? 5 : 0   "{{{2
 endif
 
 
@@ -196,8 +210,32 @@ if !exists('g:likelycomplete#max')
 endif
 
 
-let s:likelycomplete_data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})   "{{{2
-" let g:likelycomplete#data = s:likelycomplete_data " DBG
+if !exists('g:likelycomplete#run_async')
+    " How to run |g:likelycomplete#prgname|.
+    let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! %s > /dev/null &'   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#prgname')
+    " Non-empty use this program to asynchronously update word lists.
+    " It's preferable to use vim instead of gvim.
+    let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? v:progname : ''  "{{{2
+endif
+
+
+function! likelycomplete#LoadData() "{{{3
+    " echom "DBG likelycomplete#LoadData"
+    let s:likelycomplete_data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})
+    " let g:likelycomplete#data = s:likelycomplete_data " DBG
+    return ''
+endf
+
+call likelycomplete#LoadData()
+
+
+function! s:SaveData() "{{{3
+    call tlib#persistent#Save(g:likelycomplete#data_cfile, s:likelycomplete_data)
+endf
 
 
 function! s:SetData(filetype, data) "{{{3
@@ -219,6 +257,16 @@ function! s:FtOptions(filetype) "{{{3
     if exists('g:likelycomplete#options_'. a:filetype)
         call extend(ft_options, g:likelycomplete#options_{a:filetype})
     endif
+    " if !has_key(ft_options, '_extends')
+    "     let ft_options._extends = []
+    " endif
+    " while has_key(ft_options, 'extends')
+    "     let ft_extended = ft_options.extends
+    "     call add(ft_options._extends, ft_extended)
+    "     call remove(ft_options, 'extends')
+    "     let other_options = s:FtOptions(ft_extended)
+    "     let ft_options = extend(ft_options, other_options, 'keep')
+    " endwh
     " TLogVAR 2, ft_options
     return ft_options
 endf
@@ -238,20 +286,20 @@ endf
 
 
 function! likelycomplete#SetupFiletype(filetype, options) "{{{3
-    call s:EnsureFiletype(a:filetype, a:options)
-    call likelycomplete#SetupBuffer(a:filetype, bufnr('%'))
+    " TLogVAR a:filetype, a:options
+    if s:EnsureFiletype(a:filetype, a:options)
+        call likelycomplete#SetupBuffer(a:filetype, bufnr('%'))
+    endif
 endf
 
 
 function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
-    " TLogVAR a:bufnr
-    if !s:EnsureFiletype(a:filetype)
-        call s:SetDerivedOptions(a:filetype)
-    endif
+    call s:EnsureFiletype(a:filetype)
     call s:SetupComplete(a:filetype)
     if !empty(g:likelycomplete#select_imap)
         call likelycomplete#MapSelectWord(g:likelycomplete#select_imap)
     endif
+    exec 'autocmd! LikelyComplete BufUnload <buffer='. a:bufnr .'>'
     exec 'autocmd LikelyComplete BufUnload <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(a:filetype) .','. string(expand('%:p')) .')'
 endf
 
@@ -263,7 +311,6 @@ function! s:SetFiletypeOptions(filetype, options) "{{{3
     if !empty(a:options)
         call extend(s:likelycomplete_data.ft_options[a:filetype], a:options)
     endif
-    call s:SetDerivedOptions(a:filetype)
 endf
 
 
@@ -354,6 +401,8 @@ function! s:KeywordPartRx(subparts, inverse) "{{{3
 endf
 
 
+let s:setup = {}
+
 function! s:EnsureFiletype(...) "{{{3
     let filetype = a:0 >= 1 ? a:1 : s:GetFiletype()
     let options  = a:0 >= 2 ? a:2 : {}
@@ -363,10 +412,15 @@ function! s:EnsureFiletype(...) "{{{3
         call s:SetFiletypeOptions(filetype, options)
         call LikelycompleteSetupFiletype(filetype)
         call s:SaveData()
-        return 1
+        let rv = 1
     else
-        return 0
+        let rv = 0
     endif
+    if !has_key(s:setup, filetype)
+        let s:setup[filetype] = 1
+        call s:SetDerivedOptions(filetype)
+    endif
+    return rv
 endf
 
 
@@ -380,11 +434,6 @@ function! likelycomplete#RemoveFiletype(filetype) "{{{3
     endif
     call s:SaveData()
     echom "LikelyComplete: Removed support for" a:filetype
-endf
-
-
-function! s:SaveData() "{{{3
-    call tlib#persistent#Save(g:likelycomplete#data_cfile, s:likelycomplete_data)
 endf
 
 
@@ -415,7 +464,8 @@ function! s:SetupComplete(filetype) "{{{3
     if get(ft_options, 'set_completefunc', g:likelycomplete#set_completefunc)
         call likelycomplete#SetComleteFunc()
         if get(ft_options, 'auto_complete', g:likelycomplete#auto_complete)
-            autocmd LikelyComplete CursorMovedI <buffer> if !pumvisible() | call s:AutoComplete() | endif
+            autocmd LikelyComplete CursorMovedI <buffer> if !exists('b:likelycomplete_disable_auto_complete') && !pumvisible() | call s:AutoComplete() | endif
+            imap <buffer> <silent> <c-g><c-u> <c-\><c-o>:call likelycomplete#EscapeAutoComplete('')<cr>
         endif
     endif
 endf
@@ -432,9 +482,50 @@ function! s:Tokenize(ft_options, text) "{{{3
 endf
 
 
+function! likelycomplete#AsyncUpdateWordList(servername, filetype, filename) "{{{3
+    " TLogVAR a:servername, a:filetype, a:filename
+    if has('gui_running')
+        suspend
+    endif
+    call s:UpdateWordListNow(-1, a:filetype, a:filename)
+    let servers = split(serverlist(), '\n')
+    " TLogVAR servers
+    if index(servers, a:servername) != -1
+        let cmd = printf('%s --servername %s --remote-expr "likelycomplete\#LoadData()"',
+                    \ g:likelycomplete#prgname,
+                    \ a:servername)
+        let run = printf(g:likelycomplete#run_async, cmd)
+        exec 'silent!' run
+    endif
+    qall!
+endf
+
+
+let s:sfile = expand('<sfile>:p')
+
 function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
+    if empty(g:likelycomplete#prgname) || empty(g:likelycomplete#run_async) || s:sfile == fnamemodify(a:filename, ':p')
+        call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
+    else
+        if getbufvar(a:bufnr, 'likelycomplete_done', 0)
+            return
+        endif
+        let cmd = printf('%s -R -n -c "call likelycomplete\#AsyncUpdateWordList(%s, %s, %s)"',
+                    \ g:likelycomplete#prgname,
+                    \ string(v:servername),
+                    \ string(a:filetype),
+                    \ string(fnameescape(a:filename)))
+                    " \ g:likelycomplete#prgname =~ '\<gvim\>' ? '-c suspend' : '',
+        let run = printf(g:likelycomplete#run_async, cmd)
+        exec 'silent!' run
+        call setbufvar(a:bufnr, 'likelycomplete_done', 1)
+    endif
+endf
+
+
+function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
     " TLogVAR a:bufnr, a:filetype, a:filename, bufnr('%')
-    if getbufvar(a:bufnr, 'likelycomplete_done', 0)
+    if a:bufnr > 0 && getbufvar(a:bufnr, 'likelycomplete_done', 0)
         return
     endif
     let ft_options = s:FtOptions(a:filetype)
@@ -445,6 +536,9 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
         let lines = readfile(a:filename)
     else
         return
+    endif
+    if a:bufnr > 0
+        echo 'LikelyComplete: Updating' a:filetype 'word list'
     endif
     " TLogVAR 1, len(lines)
     let exclude_lines_rx = get(ft_options, 'exclude_lines_rx', '')
@@ -488,9 +582,7 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
             let assess_context = 0
         else
             let assess_context = get(ft_options, 'assess_context', g:likelycomplete#assess_context)
-            let context_words = []
         endif
-        let iword = 0
         for word in words
             if has_key(data, word)
                 let worddef = data[word]
@@ -502,16 +594,20 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
             else
                 let worddef = {'obs': g:likelycomplete#base, 'n': g:likelycomplete#base}
             endif
-            if assess_context > 0
-                let worddef.context = s:AssessContext(get(worddef, 'context', {}), context_words)
+            let data[word] = worddef
+        endfor
+        if assess_context > 0
+            let context_words = []
+            let iword = 0
+            for word in words
+                let data[word].context = s:AssessContext(get(data[word], 'context', {}), context_words)
                 call add(context_words, word)
-                if len(context_words) > assess_context
+                if iword >= assess_context
                     call remove(context_words, 0)
                 endif
-            endif
-            let data[word] = worddef
-            let iword += 1
-        endfor
+                let iword += 1
+            endfor
+        endif
         for word in filter(keys(data), '!has_key(wordds, v:val)')
             if data[word].n < g:likelycomplete#max
                 let data[word].n += 1
@@ -524,27 +620,32 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
             call s:SaveData()
         endif
     endif
-    call setbufvar(a:bufnr, 'likelycomplete_done', 1)
+    if a:bufnr > 0
+        echo
+        call setbufvar(a:bufnr, 'likelycomplete_done', 1)
+    endif
 endf
 
 
 function! s:AssessContext(context, words) "{{{3
-    let old_words = deepcopy(a:context)
+    let old_words = copy(a:context)
     for word in a:words
         " TLogVAR word
-        let n = get(a:context, word, 0)
-        if n > 0
-            " TLogVAR old_words
+        if has_key(a:context, word)
             let old_words[word] = -1
-        endif
-        if n < g:likelycomplete#max
-            let a:context[word] = n + 1
+            if a:context[word] < g:likelycomplete#max
+                let a:context[word] += 5
+            endif
+        else
+            let a:context[word] = 5
         endif
     endfor
     for [word, val] in items(old_words)
-        if val == -1
+        if val != -1
             let n = get(a:context, word, 0)
             if n > 0
+                call remove(a:context, word)
+            elseif n > 0
                 let a:context[word] = n - 1
             endif
         endif
@@ -587,14 +688,12 @@ function! s:WriteWordList(filetype) "{{{3
 endf
 
 
-function! likelycomplete#SingleSelect_tlib(prompt, list, ...) "{{{3
-    let args = ['s', a:prompt, a:list] + a:000
-    return call('tlib#input#List', args)
-endf
-
-
-function! likelycomplete#MultiSelect_tlib(prompt, list) "{{{3
-    return tlib#input#List('m', a:prompt, a:list)
+function! likelycomplete#ListPicker_tlib(type, prompt, list, base) "{{{3
+    let handlers = []
+    if !empty(a:base)
+        call add(handlers, {'filter': s:GetVFilter(filetype, a:base)})
+    endif
+    return tlib#input#List(a:type, a:prompt, a:list, handlers)
 endf
 
 
@@ -603,7 +702,7 @@ function! likelycomplete#RemoveWords(...) "{{{3
     let data = s:GetData(filetype)
     if !empty(data)
         let words0 = sort(keys(data))
-        let words1 = likelycomplete#MultiSelect_{g:likelycomplete#list_picker}('Select obsolete words', words0)
+        let words1 = likelycomplete#ListPicker_{g:likelycomplete#list_picker}('m', 'Select obsolete words', words0, '')
         if !empty(words1)
             for word in words1
                 call remove(data, word)
@@ -629,11 +728,8 @@ endf
 function! likelycomplete#SelectWord(base) "{{{3
     let filetype = s:GetFiletype()
     let words = s:GetCompletions(filetype, a:base, 0)
-    let handlers = []
-    if g:likelycomplete#list_set_filter
-        call add(handlers, {'filter': s:GetVFilter(filetype, a:base)})
-    endif
-    let word = likelycomplete#SingleSelect_{g:likelycomplete#list_picker}('Select word:', words, handlers)
+    let fbase = g:likelycomplete#list_set_filter ? a:base : ''
+    let word = likelycomplete#ListPicker_{g:likelycomplete#list_picker}('s', 'Select word:', words, fbase)
     if empty(word)
         return a:base
     else
@@ -651,6 +747,13 @@ function! likelycomplete#SetComleteFunc() "{{{3
 endf
 
 
+function! likelycomplete#EscapeAutoComplete(map) "{{{3
+    let b:likelycomplete_disable_auto_complete = 1
+    autocmd LikelyComplete CompleteDone <buffer> unlet! b:likelycomplete_disable_auto_complete
+                \ | autocmd! LikelyComplete CompleteDone <buffer>
+endf
+
+
 function s:AutoComplete()
     if exists('b:likelycomplete_completefunc')
         let filetype = s:GetFiletype()
@@ -658,26 +761,50 @@ function s:AutoComplete()
         let auto_complete = get(ft_options, 'auto_complete', g:likelycomplete#auto_complete)
         let start = likelycomplete#Complete(1, '')
         if start >= 0 && col('.') - start > auto_complete
+            let s:auto_complete = 1
             call feedkeys("\<c-x>\<c-u>", 't') 
         endif
     endif
 endf
 
 
+let s:last_failed = []
+
 function! likelycomplete#Complete(findstart, base) "{{{3
     if a:findstart
+        let pos = getpos('.')
         let line = strpart(getline('.'), 0, col('.') - 1)
         let start = match(line, '\k\+$')
-        return start
-    else
+        let base = line[start : -1]
+        let pos[2] = start + 1
+        if pos == s:last_failed
+            return -3
+        elseif start == -1 && exists('s:auto_complete')
+            let s:last_failed = pos
+            unlet s:auto_complete
+            return -3
+        elseif base !~ '\D'
+            return -3
+        else
+            let s:last_failed = []
+            return start
+        endif
+    elseif a:base =~ '\D'
         try
-            return s:GetCompletions(s:GetFiletype(), a:base, 1)
+            let rv = s:GetCompletions(s:GetFiletype(), a:base, 1)
         catch
             echohl Error
             echom v:exception
             echohl NONE
-            return []
+            let rv = []
         endtry
+        if len(rv) <= 1
+            let s:last_failed = getpos('.')
+        endif
+        return rv
+    else
+        let s:last_failed = getpos('.')
+        return []
     endif
 endf
 
@@ -788,22 +915,19 @@ function! s:AddRelevance(word, cfg) "{{{3
     let worddef = get(a:cfg.data, a:word, {})
     let val = 0
     if !empty(worddef)
-        let ac = s:AssessWordInContext(get(worddef, 'context', {}), a:cfg.words)
-        if ac != 0
-            let val = 0.0 + g:likelycomplete#max + ac
-        else
-            let av = (0.0 + worddef.obs) / worddef.n
-            if av > g:likelycomplete#max
-                let val = 0.0 + g:likelycomplete#max
-            else
-                let val = av
-            endif
+        let val = (0.0 + worddef.obs) / worddef.n
+        let weight = s:AssessWordInContext(get(worddef, 'context', {}), a:cfg.words)
+        if weight != 0
+            let val = val * weight
+        endif
+        if val > g:likelycomplete#max
+            let val = 0.0 + g:likelycomplete#max
         endif
     endif
     if !a:cfg.match_beginning && a:word =~ a:cfg.bbase_rx
-        let val = val * 1.2
+        let val = val * 10
     elseif a:cfg.use_omnifunc && a:word =~ a:cfg.base_rx
-        let val = val * 1.1
+        let val = val * 5
     endif
     return [val, a:word]
 endf

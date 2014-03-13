@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    86
+" @Revision:    87
 " GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -80,6 +80,8 @@ command! Likelycompletemapcompletefunc call likelycomplete#SetComleteFunc()
 " See also |g:likelycomplete#use_omnifunc| and |g:likelycomplete#select_imap|.
 command! -nargs=1 Likelycompletemapselect call likelycomplete#MapSelectWord(<q-args>)
 
+
+command! Likelycompleteupdate call likelycomplete#LoadData()
 
 let &cpo = s:save_cpo
 unlet s:save_cpo
