@@ -41,6 +41,7 @@ Contents~
         :Likelycompleteremovewords ........... |:Likelycompleteremovewords|
         :Likelycompletemapcompletefunc ....... |:Likelycompletemapcompletefunc|
         :Likelycompletemapselect ............. |:Likelycompletemapselect|
+        :Likelycompleteupdate ................ |:Likelycompleteupdate|
         g:likelycomplete#experimental ........ |g:likelycomplete#experimental|
         g:likelycomplete#list_set_filter ..... |g:likelycomplete#list_set_filter|
         g:likelycomplete#select_imap ......... |g:likelycomplete#select_imap|
@@ -59,16 +60,21 @@ Contents~
         g:likelycomplete#assess_context ...... |g:likelycomplete#assess_context|
         g:likelycomplete#base ................ |g:likelycomplete#base|
         g:likelycomplete#max ................. |g:likelycomplete#max|
+        g:likelycomplete#run_async ........... |g:likelycomplete#run_async|
+        g:likelycomplete#prgname ............. |g:likelycomplete#prgname|
+        likelycomplete#LoadData .............. |likelycomplete#LoadData()|
         likelycomplete#String2Args ........... |likelycomplete#String2Args()|
         likelycomplete#SetupFiletype ......... |likelycomplete#SetupFiletype()|
         likelycomplete#SetupBuffer ........... |likelycomplete#SetupBuffer()|
         likelycomplete#RemoveFiletype ........ |likelycomplete#RemoveFiletype()|
-        likelycomplete#SingleSelect_tlib ..... |likelycomplete#SingleSelect_tlib()|
-        likelycomplete#MultiSelect_tlib ...... |likelycomplete#MultiSelect_tlib()|
+        i_<c-g><c-u> ......................... |i_<c-g><c-u>|
+        likelycomplete#AsyncUpdateWordList ... |likelycomplete#AsyncUpdateWordList()|
+        likelycomplete#ListPicker_tlib ....... |likelycomplete#ListPicker_tlib()|
         likelycomplete#RemoveWords ........... |likelycomplete#RemoveWords()|
         likelycomplete#MapSelectWord ......... |likelycomplete#MapSelectWord()|
         likelycomplete#SelectWord ............ |likelycomplete#SelectWord()|
         likelycomplete#SetComleteFunc ........ |likelycomplete#SetComleteFunc()|
+        likelycomplete#EscapeAutoComplete .... |likelycomplete#EscapeAutoComplete()|
         likelycomplete#Complete .............. |likelycomplete#Complete()|
 
 
@@ -122,13 +128,19 @@ LikelycompleteSetupFiletype(filetype)
     See |tlib#input#List()| for details on how to use the list picker.
     See also |g:likelycomplete#use_omnifunc| and |g:likelycomplete#select_imap|.
 
+                                                    *:Likelycompleteupdate*
+:Likelycompleteupdate
+
 
 ========================================================================
 autoload/likelycomplete.vim~
 
                                                     *g:likelycomplete#experimental*
 g:likelycomplete#experimental  (default: 0)
-    If true, enable some experimental options.
+    If 1, enable some experimental options.
+    If 2, enable even more experimental options that are not 
+    recommended for everyday use.
+
     Some of these experimental options may cause minor interruptions, 
     delays, and increased memory usage.
 
@@ -145,14 +157,21 @@ g:likelycomplete#select_imap   (default: empty(maparg('<C-S-Space>', 'i'))? '<C-
     filetypes.
 
                                                     *g:likelycomplete#set_completefunc*
-g:likelycomplete#set_completefunc (default: g:likelycomplete#experimental)
+g:likelycomplete#set_completefunc (default: g:likelycomplete#experimental >= 1)
     If true, set 'completefunc' for supported buffers. The results of 
     the old completefunc will be incorporated.
 
                                                     *g:likelycomplete#auto_complete*
-g:likelycomplete#auto_complete (default: g:likelycomplete#experimental ? 2 : 0)
+g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 : 0)
     The number of characters after which auto-completion should be 
     invoked. If 0, auto-completion is disabled.
+
+                                    *i_Ctrl-G_Ctrl-U* *likelycomplete-<c-g><c-u>*
+    When auto-completion is enabled, a |imap| <c-g><c-u> is defined 
+    that can be used to temporarily disable auto-completion in order 
+    to perform some other kind of |ins-completion|. Auto-completion 
+    will be re-enabled on the next |CompleteDone| event issued by that 
+    completion.
 
     This option requires |g:likelycomplete#set_completefunc| to be 
     true or |:Likelycompletemapcompletefunc| to be called.
@@ -184,11 +203,15 @@ g:likelycomplete#list_picker   (default: 'tlib')
     VIM plugin developers can add support for "list pickers" other 
     than tlib by defining the following functions:
 
-    1. Select a single item from a list:
-        likelycomplete#SingleSelect_{TYPE}(prompt, list, ?handlers=[])
+        likelycomplete#ListPicker(type, prompt, list, base)
 
-    2. Select multiple item from a list:
-        likelycomplete#MultiSelect_{TYPE}(prompt, list)
+    with
+
+      type .... 's' (select single item) or 'm' (select multiple items)
+      prompt .. A string
+      list .... A list
+      base .... A string that should be selected (may be ignored; see 
+                also |g:likelycomplete#list_set_filter|)
 
                                                     *g:likelycomplete#other_sources*
 g:likelycomplete#other_sources (default: [])
@@ -222,7 +245,7 @@ g:likelycomplete#once_per_file (default: 0)
     of word X in a buffer will be counted as N times.
 
                                                     *g:likelycomplete#assess_context*
-g:likelycomplete#assess_context (default: g:likelycomplete#experimental && !g:likelycomplete#once_per_file ? 5 : 0)
+g:likelycomplete#assess_context (default: g:likelycomplete#experimental >= 1 && !g:likelycomplete#once_per_file ? 5 : 0)
     The number of preceding words that should be taken into account 
     when sorting the list of possible completions.
     This is only used in conjunction with |:Likelycompletemapselect| 
@@ -244,6 +267,18 @@ g:likelycomplete#base          (default: 50)
 g:likelycomplete#max           (default: 10000)
     The maximum number of observations taken into account.
 
+                                                    *g:likelycomplete#run_async*
+g:likelycomplete#run_async     (default: has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! %s > /dev/null &')
+    How to run |g:likelycomplete#prgname|.
+
+                                                    *g:likelycomplete#prgname*
+g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? v:progname : '')
+    Non-empty use this program to asynchronously update word lists.
+    It's preferable to use vim instead of gvim.
+
+                                                    *likelycomplete#LoadData()*
+likelycomplete#LoadData()
+
                                                     *likelycomplete#String2Args()*
 likelycomplete#String2Args(string)
 
@@ -256,11 +291,14 @@ likelycomplete#SetupBuffer(filetype, bufnr)
                                                     *likelycomplete#RemoveFiletype()*
 likelycomplete#RemoveFiletype(filetype)
 
-                                                    *likelycomplete#SingleSelect_tlib()*
-likelycomplete#SingleSelect_tlib(prompt, list, ...)
+                                                    *i_<c-g><c-u>*
+i_<c-g><c-u> ... <c-\><c-o>:call likelycomplete#EscapeAutoComplete('')<cr>
 
-                                                    *likelycomplete#MultiSelect_tlib()*
-likelycomplete#MultiSelect_tlib(prompt, list)
+                                                    *likelycomplete#AsyncUpdateWordList()*
+likelycomplete#AsyncUpdateWordList(servername, filetype, filename)
+
+                                                    *likelycomplete#ListPicker_tlib()*
+likelycomplete#ListPicker_tlib(type, prompt, list, base)
 
                                                     *likelycomplete#RemoveWords()*
 likelycomplete#RemoveWords(...)
@@ -273,6 +311,9 @@ likelycomplete#SelectWord(base)
 
                                                     *likelycomplete#SetComleteFunc()*
 likelycomplete#SetComleteFunc()
+
+                                                    *likelycomplete#EscapeAutoComplete()*
+likelycomplete#EscapeAutoComplete(map)
 
                                                     *likelycomplete#Complete()*
 likelycomplete#Complete(findstart, base)
