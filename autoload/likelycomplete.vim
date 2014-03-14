@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    838
+" @Revision:    844
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -77,6 +77,13 @@ if !exists('g:likelycomplete#use_omnifunc')
 endif
 
 
+if !exists('g:likelycomplete#use_words')
+    " If true, add words in the current buffer to the list of possible 
+    " completions.
+    let g:likelycomplete#use_words = 1   "{{{2
+endif
+
+
 if !exists('g:likelycomplete#match_beginning')
     " If true, matches must match the beginning of a word -- this is 
     " only relevant to |:Likelycompletemapselect| and 
@@ -143,6 +150,7 @@ if !exists('g:likelycomplete#options')
     "   set_completefunc ... Override |g:likelycomplete#set_completefunc|
     "   auto_complete ...... Override |g:likelycomplete#auto_complete|
     "   use_omnifunc ....... Override |g:likelycomplete#use_omnifunc|
+    "   use_words .......... Override |g:likelycomplete#use_words|
     "   use_fuzzy_matches .. Override |g:likelycomplete#use_fuzzy_matches|
     "   match_beginning .... Override |g:likelycomplete#match_beginning|
     "   maxsize ............ Override |g:likelycomplete#maxsize|
@@ -553,40 +561,31 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
 endf
 
 
-function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
-    " TLogVAR a:bufnr, a:filetype, a:filename, bufnr('%')
-    if a:bufnr > 0 && getbufvar(a:bufnr, 'likelycomplete_done', 0)
-        return
-    endif
-    let ft_options = s:FtOptions(a:filetype)
-    " TLogVAR ft_options
+function! s:GetBufferWords(bufnr, filetype, filename, ft_options) "{{{3
     if bufnr('%') == a:bufnr
         let lines = getline(1, line('$'))
     elseif filereadable(a:filename)
         let lines = readfile(a:filename)
     else
-        return
-    endif
-    if a:bufnr > 0
-        echo 'LikelyComplete: Updating' a:filetype 'word list'
+        return []
     endif
     " TLogVAR 1, len(lines)
-    let exclude_lines_rx = get(ft_options, 'exclude_lines_rx', '')
+    let exclude_lines_rx = get(a:ft_options, 'exclude_lines_rx', '')
     " TLogVAR exclude_lines_rx
     if !empty(exclude_lines_rx)
         let lines = filter(lines, 'v:val !~ exclude_lines_rx')
         " TLogVAR 2, len(lines)
     endif
-    let strip_rx = get(ft_options, 'strip_rx', '')
+    let strip_rx = get(a:ft_options, 'strip_rx', '')
     " TLogVAR strip_rx
     if !empty(strip_rx)
         let lines = map(lines, 'substitute(v:val, strip_rx, " ", "g")')
         " TLogVAR 3, len(lines)
     endif
-    if get(ft_options, 'strip_comments', 1) && has_key(ft_options, 'cms')
-        let cms_rx = get(ft_options, 'cms_rx', '')
+    if get(a:ft_options, 'strip_comments', 1) && has_key(a:ft_options, 'cms')
+        let cms_rx = get(a:ft_options, 'cms_rx', '')
         if empty(cms_rx)
-            let cms_rx = '\V'. substitute(escape(ft_options.cms, '\'), '%s', '\\.\\{-}', '')
+            let cms_rx = '\V'. substitute(escape(a:ft_options.cms, '\'), '%s', '\\.\\{-}', '')
         endif
         if cms_rx !~ '\\$\$'
             let cms_rx .=  '\.\*\$'
@@ -595,18 +594,33 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
         let lines = filter(lines, 'v:val !~ cms_rx')
         " TLogVAR 4, len(lines)
     endif
-    let words = s:Tokenize(ft_options, join(lines))
+    let words = s:Tokenize(a:ft_options, join(lines))
     " TLogVAR words
     " TLogVAR 1, len(words)
-    let word_minlength = get(ft_options, 'word_minlength', g:likelycomplete#word_minlength)
+    let word_minlength = get(a:ft_options, 'word_minlength', g:likelycomplete#word_minlength)
     " TLogVAR word_minlength
     let words = filter(words, '!empty(v:val) && strwidth(v:val) >= word_minlength')
     " TLogVAR 2, len(words)
-    if get(ft_options, 'strip_numbers', 1)
+    if get(a:ft_options, 'strip_numbers', 1)
         let words = filter(words, 'v:val !~ ''^-\?\d\+\(\.\d\+\)\?$''')
         " TLogVAR 3, len(words)
     endif
     " TLogVAR words
+    return words
+endf
+
+
+function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
+    " TLogVAR a:bufnr, a:filetype, a:filename, bufnr('%')
+    if a:bufnr > 0 && getbufvar(a:bufnr, 'likelycomplete_done', 0)
+        return
+    endif
+    if a:bufnr > 0
+        echo 'LikelyComplete: Updating' a:filetype 'word list'
+    endif
+    let ft_options = s:FtOptions(a:filetype)
+    let words = s:GetBufferWords(a:bufnr, a:filetype, a:filename, ft_options)
+    " TLogVAR ft_options
     let data = s:GetData(a:filetype)
     if !empty(words)
         let wordds = {}
@@ -886,13 +900,17 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
             unlet varval
         endif
     endfor
+    " TLogVAR ft_options
+    if get(ft_options, 'use_words', g:likelycomplete#use_words)
+        let completions += s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', ft_options)
+        " TLogVAR 3.1, len(completions)
+    endif
     if !empty(a:base)
         let lbase = len(a:base)
         let rx = s:GetVFilter(a:filetype, a:base)
         let completions = filter(completions, 'len(v:val) > lbase && v:val =~ rx')
         " TLogVAR 4, len(completions)
     endif
-    " TLogVAR ft_options
     if get(ft_options, 'assess_context', g:likelycomplete#assess_context)
         let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
         " TLogVAR 5, len(completions)
