@@ -69,47 +69,50 @@ LikelyComplete for certain filetypes.
 ========================================================================
 Contents~
 
-        g:likelycomplete_filetypes ........... |g:likelycomplete_filetypes|
-        LikelycompleteSetupFiletype .......... |LikelycompleteSetupFiletype()|
-        :Likelycomplete ...................... |:Likelycomplete|
-        :Likelycompleteremovewords ........... |:Likelycompleteremovewords|
-        :Likelycompletemapcompletefunc ....... |:Likelycompletemapcompletefunc|
-        :Likelycompletemapselect ............. |:Likelycompletemapselect|
-        :Likelycompleteupdate ................ |:Likelycompleteupdate|
-        g:likelycomplete#experimental ........ |g:likelycomplete#experimental|
-        g:likelycomplete#list_set_filter ..... |g:likelycomplete#list_set_filter|
-        g:likelycomplete#select_imap ......... |g:likelycomplete#select_imap|
-        g:likelycomplete#set_completefunc .... |g:likelycomplete#set_completefunc|
-        g:likelycomplete#auto_complete ....... |g:likelycomplete#auto_complete|
-        g:likelycomplete#use_omnifunc ........ |g:likelycomplete#use_omnifunc|
-        g:likelycomplete#match_beginning ..... |g:likelycomplete#match_beginning|
-        g:likelycomplete#use_fuzzy_matches ... |g:likelycomplete#use_fuzzy_matches|
-        g:likelycomplete#list_picker ......... |g:likelycomplete#list_picker|
-        g:likelycomplete#other_sources ....... |g:likelycomplete#other_sources|
-        g:likelycomplete#data_cfile .......... |g:likelycomplete#data_cfile|
-        g:likelycomplete#options_vim ......... |g:likelycomplete#options_vim|
-        g:likelycomplete#maxsize ............. |g:likelycomplete#maxsize|
-        g:likelycomplete#word_minlength ...... |g:likelycomplete#word_minlength|
-        g:likelycomplete#once_per_file ....... |g:likelycomplete#once_per_file|
-        g:likelycomplete#assess_context ...... |g:likelycomplete#assess_context|
-        g:likelycomplete#base ................ |g:likelycomplete#base|
-        g:likelycomplete#max ................. |g:likelycomplete#max|
-        g:likelycomplete#run_async ........... |g:likelycomplete#run_async|
-        g:likelycomplete#prgname ............. |g:likelycomplete#prgname|
-        likelycomplete#LoadData .............. |likelycomplete#LoadData()|
-        likelycomplete#String2Args ........... |likelycomplete#String2Args()|
-        likelycomplete#SetupFiletype ......... |likelycomplete#SetupFiletype()|
-        likelycomplete#SetupBuffer ........... |likelycomplete#SetupBuffer()|
-        likelycomplete#RemoveFiletype ........ |likelycomplete#RemoveFiletype()|
-        i_<c-g><c-u> ......................... |i_<c-g><c-u>|
-        likelycomplete#AsyncUpdateWordList ... |likelycomplete#AsyncUpdateWordList()|
-        likelycomplete#ListPicker_tlib ....... |likelycomplete#ListPicker_tlib()|
-        likelycomplete#RemoveWords ........... |likelycomplete#RemoveWords()|
-        likelycomplete#MapSelectWord ......... |likelycomplete#MapSelectWord()|
-        likelycomplete#SelectWord ............ |likelycomplete#SelectWord()|
-        likelycomplete#SetComleteFunc ........ |likelycomplete#SetComleteFunc()|
-        likelycomplete#EscapeAutoComplete .... |likelycomplete#EscapeAutoComplete()|
-        likelycomplete#Complete .............. |likelycomplete#Complete()|
+        g:likelycomplete_filetypes ............ |g:likelycomplete_filetypes|
+        LikelycompleteSetupFiletype ........... |LikelycompleteSetupFiletype()|
+        :Likelycomplete ....................... |:Likelycomplete|
+        :Likelycompleteremovewords ............ |:Likelycompleteremovewords|
+        :Likelycompletemapcompletefunc ........ |:Likelycompletemapcompletefunc|
+        :Likelycompletemapselect .............. |:Likelycompletemapselect|
+        :Likelycompleteupdate ................. |:Likelycompleteupdate|
+        g:likelycomplete#experimental ......... |g:likelycomplete#experimental|
+        g:likelycomplete#list_set_filter ...... |g:likelycomplete#list_set_filter|
+        g:likelycomplete#select_imap .......... |g:likelycomplete#select_imap|
+        g:likelycomplete#set_completefunc ..... |g:likelycomplete#set_completefunc|
+        g:likelycomplete#auto_complete ........ |g:likelycomplete#auto_complete|
+        g:likelycomplete#use_omnifunc ......... |g:likelycomplete#use_omnifunc|
+        g:likelycomplete#match_beginning ...... |g:likelycomplete#match_beginning|
+        g:likelycomplete#use_fuzzy_matches .... |g:likelycomplete#use_fuzzy_matches|
+        g:likelycomplete#list_picker .......... |g:likelycomplete#list_picker|
+        g:likelycomplete#other_sources ........ |g:likelycomplete#other_sources|
+        g:likelycomplete#data_cfile ........... |g:likelycomplete#data_cfile|
+        g:likelycomplete#options_javascript ... |g:likelycomplete#options_javascript|
+        g:likelycomplete#options_vim .......... |g:likelycomplete#options_vim|
+        g:likelycomplete#maxsize .............. |g:likelycomplete#maxsize|
+        g:likelycomplete#word_minlength ....... |g:likelycomplete#word_minlength|
+        g:likelycomplete#once_per_file ........ |g:likelycomplete#once_per_file|
+        g:likelycomplete#assess_context ....... |g:likelycomplete#assess_context|
+        g:likelycomplete#base ................. |g:likelycomplete#base|
+        g:likelycomplete#max .................. |g:likelycomplete#max|
+        g:likelycomplete#run_async ............ |g:likelycomplete#run_async|
+        g:likelycomplete#prgname .............. |g:likelycomplete#prgname|
+        g:likelycomplete#debug ................ |g:likelycomplete#debug|
+        likelycomplete#LoadData ............... |likelycomplete#LoadData()|
+        likelycomplete#String2Args ............ |likelycomplete#String2Args()|
+        likelycomplete#SetupFiletype .......... |likelycomplete#SetupFiletype()|
+        likelycomplete#SetupBuffer ............ |likelycomplete#SetupBuffer()|
+        likelycomplete#RemoveFiletype ......... |likelycomplete#RemoveFiletype()|
+        i_<c-g><c-u> .......................... |i_<c-g><c-u>|
+        likelycomplete#Tokenize ............... |likelycomplete#Tokenize()|
+        likelycomplete#AsyncUpdateWordList .... |likelycomplete#AsyncUpdateWordList()|
+        likelycomplete#ListPicker_tlib ........ |likelycomplete#ListPicker_tlib()|
+        likelycomplete#RemoveWords ............ |likelycomplete#RemoveWords()|
+        likelycomplete#MapSelectWord .......... |likelycomplete#MapSelectWord()|
+        likelycomplete#SelectWord ............. |likelycomplete#SelectWord()|
+        likelycomplete#SetComleteFunc ......... |likelycomplete#SetComleteFunc()|
+        likelycomplete#EscapeAutoComplete ..... |likelycomplete#EscapeAutoComplete()|
+        likelycomplete#Complete ............... |likelycomplete#Complete()|
 
 
 ========================================================================
@@ -261,6 +264,11 @@ g:likelycomplete#other_sources (default: [])
                                                     *g:likelycomplete#data_cfile*
 g:likelycomplete#data_cfile    (default: tlib#persistent#Filename('likelycomplete', 'data', 1))
 
+                                                    *g:likelycomplete#options_javascript*
+g:likelycomplete#options_javascript (default: {...})
+    Some custom options for javascript (see 
+    |g:likelycomplete#options|).
+
                                                     *g:likelycomplete#options_vim*
 g:likelycomplete#options_vim   (default: {...})
     Some custom options for the vim filetype (see 
@@ -314,6 +322,9 @@ g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && h
     Non-empty use this program to asynchronously update word lists.
     It's preferable to use vim instead of gvim.
 
+                                                    *g:likelycomplete#debug*
+g:likelycomplete#debug         (default: 0)
+
                                                     *likelycomplete#LoadData()*
 likelycomplete#LoadData()
 
@@ -331,6 +342,9 @@ likelycomplete#RemoveFiletype(filetype)
 
                                                     *i_<c-g><c-u>*
 i_<c-g><c-u> ... <c-\><c-o>:call likelycomplete#EscapeAutoComplete('')<cr>
+
+                                                    *likelycomplete#Tokenize()*
+likelycomplete#Tokenize(text, ...)
 
                                                     *likelycomplete#AsyncUpdateWordList()*
 likelycomplete#AsyncUpdateWordList(servername, filetype, filename)
