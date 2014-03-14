@@ -1,9 +1,46 @@
 Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
 plugin observes any buffer of that filetype. It collects the words, 
 ranks them based on the probability of their occurrences (sort of) and 
-compiles a dictionary file that is fed to 'complete'. This way any words 
-that are frequently used in files of an enabled filetype, should be 
-offered in the completion list (see |i_CTRL-P|).
+compiles a dictionary file that is fed to 'complete'. Any words that are 
+frequently used in files of enabled filetypes, are offered in the 
+completion list (see |i_CTRL-P|). The plugin also supports Insert mode 
+completion (see 'completefunc') that optionally takes into account the cursor's 
+context.
+
+The word list on disk is updated when leaving vim. It could take a few 
+editing sessions to get at a usable word list.
+
+Featues:
+
+    - Generate word lists for use in 'complete' (see also |ins-completion| and 
+      |i_CTRL-P|)
+    - Set a 'completefunc' (incorporate results from the original 
+      'completefunc' and optionally from 'omnifunc') -- see 
+      |g:likelycomplete#set_completefunc|
+
+Additional featues for use as 'completefunc':
+
+    - Auto-completion -- see |g:likelycomplete#auto_complete|
+    - Fuzzy completion -- see |g:likelycomplete#use_fuzzy_matches|
+    - Part of word completion -- see |g:likelycomplete#match_beginning|
+    - Context based sorting (not available for |i_CTRL-P|) -- see 
+      |g:likelycomplete#assess_context|
+    - If finding the right completion via VIM's own popup menu is too 
+      cumbersome, press <C-S-Space> -- see |g:likelycomplete#select_imap|
+
+By default only completion via |i_CTRL-P| is enabled (and only for those 
+filetypes listed in |g:likelycomplete_filetypes|). Most of the above options 
+can be enabled by setting |g:likelycomplete#experimental| to 1.
+
+
+Related Work~
+
+There are of course other similar plugins you might want to check out if 
+likelycomplete doesn't meet your requirements:
+
+    - YouCompleteMe (supports semantic completion for C/C++/..., Python, C#)
+    - neocomplcache
+    - ...
 
 
 -----------------------------------------------------------------------
