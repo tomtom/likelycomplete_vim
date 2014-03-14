@@ -2,8 +2,8 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    87
-" GetLatestVimScripts: 0 0 :AutoInstall: likelycomplete.vim
+" @Revision:    88
+" GetLatestVimScripts: 4889 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
     finish

@@ -1,4 +1,4 @@
-*likelycomplete.txt*  Collect words for completion
+*likelycomplete.txt*  Collect & rank words for completion
                       Author: Tom Link, micathom at gmail com
 
 Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
