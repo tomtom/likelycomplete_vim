@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    809
+" @Revision:    815
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -895,6 +895,7 @@ function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words) "{{{3
     let line = getline('.')[0 : col('.') - 1]
     let line = substitute(line, '\(^\s\+\|\s\+$\)', '', 'g')
     let cfg = {
+                \ 'base': a:base,
                 \ 'base_rx': escape(a:base, '\'),
                 \ 'bbase_rx': '\V\^'. escape(a:base, '\'),
                 \ 'words': s:Tokenize(a:ft_options, line),
@@ -905,7 +906,7 @@ function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words) "{{{3
     " TLogVAR cfg.base_rx
     let assessed_words = map(copy(a:words), 's:AddRelevance(v:val, cfg)')
     let sorted_words = sort(assessed_words, 's:CompareRev0')
-    " TLogVAR sorted_words
+    " TLogVAR sorted_wordstmru
     let sorted_words = map(sorted_words, 'v:val[1]')
     return sorted_words
 endf
@@ -924,11 +925,16 @@ function! s:AddRelevance(word, cfg) "{{{3
             let val = 0.0 + g:likelycomplete#max
         endif
     endif
-    if !a:cfg.match_beginning && a:word =~ a:cfg.bbase_rx
-        let val = val * 10
+    if !a:cfg.match_beginning
+        if a:word =~# a:cfg.bbase_rx
+            let val = val * 20
+        elseif a:word =~? a:cfg.bbase_rx
+            let val = val * 10
+        endif
     elseif a:cfg.use_omnifunc && a:word =~ a:cfg.base_rx
         let val = val * 5
     endif
+    let val = val * (1 + len(a:cfg.base) / len(a:word))
     return [val, a:word]
 endf
 
