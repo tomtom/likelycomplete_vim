@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    817
+" @Revision:    838
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -130,11 +130,13 @@ if !exists('g:likelycomplete#options')
     " The following keys are supported:
     "   exclude_lines_rx ... Exclude lines matching this |regexp|
     "   strip_comments ..... Remove comments and any trailing text (not 
-    "                        supported for all filetypes; requires 'cms' to be 
-    "                        set)
+    "                        supported for all filetypes; requires 
+    "                        cms_rx or 'cms' to be set)
     "   strip_strings ...... Remove strings from lines
     "   strip_numbers ...... Remove numbers from lines
     "   strip_rx ........... Remove matching text from lines
+    "   cms_rx ............. A |regexp| matching comments (override use 
+    "                        of 'cms')
     "
     " The following keys can override global parameters:
     "   other_sources ...... Override |g:likelycomplete#other_sources|
@@ -148,6 +150,16 @@ if !exists('g:likelycomplete#options')
     "   assess_context ..... Override |g:likelycomplete#assess_context|
     "   word_minlength ..... Override |g:likelycomplete#word_minlength|
     let g:likelycomplete#options = {}
+endif
+
+
+if !exists('g:likelycomplete#options_javascript')
+    " Some custom options for javascript (see 
+    " |g:likelycomplete#options|).
+    " :read: let g:likelycomplete#options_javascript = {...}   "{{{2
+    let g:likelycomplete#options_javascript = {
+                \ 'cms_rx': '\(/*%s*/\|\^\s\*//%s\)',
+                \ }
 endif
 
 
@@ -224,6 +236,11 @@ if !exists('g:likelycomplete#prgname')
     " Non-empty use this program to asynchronously update word lists.
     " It's preferable to use vim instead of gvim.
     let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? v:progname : ''  "{{{2
+endif
+
+
+if !exists('g:likelycomplete#debug')
+    let g:likelycomplete#debug = 0   "{{{2
 endif
 
 
@@ -475,6 +492,15 @@ function! s:SetupComplete(filetype) "{{{3
 endf
 
 
+if g:likelycomplete#debug
+    function! likelycomplete#Tokenize(text, ...) "{{{3
+        let filetype = a:0 >= 1 ? a:1 : &ft
+        let ft_options = s:FtOptions(filetype)
+        return s:Tokenize(ft_options, a:text)
+    endf
+endif
+
+
 function! s:Tokenize(ft_options, text) "{{{3
     let text = a:text
     if get(a:ft_options, 'strip_strings', 1)
@@ -558,7 +584,13 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
         " TLogVAR 3, len(lines)
     endif
     if get(ft_options, 'strip_comments', 1) && has_key(ft_options, 'cms')
-        let cms_rx = '\V'. substitute(escape(ft_options.cms, '\'), '%s', '\\.\\{-}', '') .'\.\*\$'
+        let cms_rx = get(ft_options, 'cms_rx', '')
+        if empty(cms_rx)
+            let cms_rx = '\V'. substitute(escape(ft_options.cms, '\'), '%s', '\\.\\{-}', '')
+        endif
+        if cms_rx !~ '\\$\$'
+            let cms_rx .=  '\.\*\$'
+        endif
         " TLogVAR cms_rx
         let lines = filter(lines, 'v:val !~ cms_rx')
         " TLogVAR 4, len(lines)
@@ -567,6 +599,7 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
     " TLogVAR words
     " TLogVAR 1, len(words)
     let word_minlength = get(ft_options, 'word_minlength', g:likelycomplete#word_minlength)
+    " TLogVAR word_minlength
     let words = filter(words, '!empty(v:val) && strwidth(v:val) >= word_minlength')
     " TLogVAR 2, len(words)
     if get(ft_options, 'strip_numbers', 1)
