@@ -36,6 +36,16 @@ filetypes listed in |g:likelycomplete_filetypes|). Most of the above options
 can be enabled by setting |g:likelycomplete#experimental| to 1.
 
 
+Related Work~
+
+There are of course other similar plugins you might want to check out if 
+likelycomplete doesn't meet your requirements:
+
+    - YouCompleteMe (supports semantic completion for C/C++/..., Python, C#)
+    - neocomplcache
+    - ...
+
+
 -----------------------------------------------------------------------
 Install~
 
