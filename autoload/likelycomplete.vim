@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    815
+" @Revision:    817
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -19,6 +19,9 @@ if !exists('g:likelycomplete#experimental')
     "
     " Some of these experimental options may cause minor interruptions, 
     " delays, and increased memory usage.
+    "
+    " The list of features deemed 'experimental' may change from version 
+    " to version.
     let g:likelycomplete#experimental = 0   "{{{2
 endif
 
@@ -42,6 +45,7 @@ endif
 if !exists('g:likelycomplete#set_completefunc')
     " If true, set 'completefunc' for supported buffers. The results of 
     " the old completefunc will be incorporated.
+    " See also |:Likelycompletemapcompletefunc|.
     let g:likelycomplete#set_completefunc = g:likelycomplete#experimental >= 1   "{{{2
 endif
 
