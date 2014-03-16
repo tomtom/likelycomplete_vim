@@ -2,13 +2,13 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    88
+" @Revision:    89
 " GetLatestVimScripts: 4889 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
     finish
 endif
-let loaded_likelycomplete = 1
+let loaded_likelycomplete = 2
 
 let s:save_cpo = &cpo
 set cpo&vim
