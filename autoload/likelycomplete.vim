@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    905
+" @Revision:    964
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -493,6 +493,7 @@ function! s:SetupComplete(filetype) "{{{3
     if get(ft_options, 'set_completefunc', g:likelycomplete#set_completefunc)
         call likelycomplete#SetComleteFunc()
         if get(ft_options, 'auto_complete', g:likelycomplete#auto_complete)
+            autocmd! LikelyComplete CursorMovedI <buffer>
             autocmd LikelyComplete CursorMovedI <buffer> if !exists('b:likelycomplete_disable_auto_complete') && !pumvisible() | call s:AutoComplete() | endif
             imap <buffer> <silent> <c-g><c-u> <c-\><c-o>:call likelycomplete#EscapeAutoComplete('')<cr>
         endif
