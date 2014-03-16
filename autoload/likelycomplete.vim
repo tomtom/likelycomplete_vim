@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    844
+" @Revision:    854
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -790,10 +790,9 @@ function! likelycomplete#SelectWord(base) "{{{3
     let fbase = g:likelycomplete#list_set_filter ? a:base : ''
     let word = likelycomplete#ListPicker_{g:likelycomplete#list_picker}('s', 'Select word:', words, fbase)
     if empty(word)
-        return a:base
-    else
-        return word
+        let word = a:base
     endif
+    return word
 endf
 
 
