@@ -744,7 +744,15 @@ function! likelycomplete#ListPicker_tlib(type, prompt, list, base) "{{{3
     if !empty(a:base)
         call add(handlers, {'filter': s:GetVFilter(filetype, a:base)})
     endif
-    return tlib#input#List(a:type, a:prompt, a:list, handlers)
+    let showmode = &showmode
+    set noshowmode
+    try
+        return tlib#input#List(a:type, a:prompt, a:list, handlers)
+    finally
+        if showmode != &showmode
+            let &showmode = showmode
+        endif
+    endtry
 endf
 
 
