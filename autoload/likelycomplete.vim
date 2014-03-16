@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    856
+" @Revision:    905
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -98,7 +98,7 @@ if !exists('g:likelycomplete#use_fuzzy_matches')
     " and |:Likelycompletemapcompletefunc|.
     " If you really believe in fuzzy matching, you might want to 
     " consider also setting |g:tlib#input#filter_mode| to 'fuzzy'.
-    let g:likelycomplete#use_fuzzy_matches = 0   "{{{2
+    let g:likelycomplete#use_fuzzy_matches = 1   "{{{2
 endif
 
 
@@ -919,9 +919,11 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
         " TLogVAR 4, len(completions)
     endif
     let completions = tlib#list#Uniq(completions, '', 1)
+    " TLogVAR 5.0, completions
     if get(ft_options, 'assess_context', g:likelycomplete#assess_context)
         let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
-        " TLogVAR 5, len(completions)
+        " TLogVAR 5.1, len(completions)
+        " TLogVAR 5.2, completions
     endif
     " TLogVAR ft_options
     if a:check_auto_complete && get(ft_options, 'auto_complete', g:likelycomplete#auto_complete)
@@ -953,16 +955,34 @@ function! s:GetVFilter(filetype, base) "{{{3
 endf
 
 
+function! s:GetWordParts(base) "{{{3
+    let parts = {}
+    let lbase = len(a:base)
+    if lbase > 2
+        for l in range(2, lbase)
+            let lparts = split(a:base, repeat('.', l) .'\zs')
+            let parts_rx = join(lparts, '\.\{-}')
+            " TLogVAR l, lparts, parts_rx
+            let parts[l] = parts_rx
+        endfor
+    endif
+    return parts
+endf
+
+
 function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words) "{{{3
     " TLogVAR len(a:words)
     let line = getline('.')[0 : col('.') - 1]
     let line = substitute(line, '\(^\s\+\|\s\+$\)', '', 'g')
+    let use_fuzzy = get(a:ft_options, 'use_fuzzy_matches', g:likelycomplete#use_fuzzy_matches)
     let cfg = {
                 \ 'base': a:base,
                 \ 'base_rx': escape(a:base, '\'),
                 \ 'bbase_rx': '\V\^'. escape(a:base, '\'),
+                \ 'base_parts': use_fuzzy ? items(s:GetWordParts(a:base)) : [],
                 \ 'words': s:Tokenize(a:ft_options, line),
                 \ 'match_beginning': get(a:ft_options, 'match_beginning', g:likelycomplete#match_beginning),
+                \ 'use_fuzzy': use_fuzzy,
                 \ 'use_omnifunc': get(a:ft_options, 'use_omnifunc', g:likelycomplete#use_omnifunc),
                 \ 'data': s:GetData(a:filetype),
                 \ }
@@ -980,7 +1000,7 @@ function! s:AddRelevance(word, cfg) "{{{3
     let val = 0
     if !empty(worddef)
         let val = (0.0 + worddef.obs) / worddef.n
-        let weight = s:AssessWordInContext(get(worddef, 'context', {}), a:cfg.words)
+        let weight = s:AssessWordInContext(a:word, get(worddef, 'context', {}), a:cfg.words)
         if weight != 0
             let val = val * weight
         endif
@@ -988,24 +1008,40 @@ function! s:AddRelevance(word, cfg) "{{{3
             let val = 0.0 + g:likelycomplete#max
         endif
     endif
-    if !a:cfg.match_beginning
-        if a:word =~# a:cfg.bbase_rx
-            let val = val * 20
-        elseif a:word =~? a:cfg.bbase_rx
-            let val = val * 10
+    if a:cfg.use_fuzzy
+        for [plen, parts_rx] in a:cfg.base_parts
+            if a:word =~? parts_rx
+                if a:word =~# parts_rx
+                    let plen = plen * 5
+                endif
+                let val = val * plen
+            endif
+        endfor
+    else
+        if !a:cfg.match_beginning
+            let wordpart = strpart(a:word, 0, len(a:cfg.base))
+            if wordpart ==# a:cfg.base
+                let val = val * 10
+            elseif (&ignorecase || &smartcase) && wordpart ==? a:cfg.base
+                let val = val * 5
+            endif
         endif
-    elseif a:cfg.use_omnifunc && a:word =~ a:cfg.base_rx
-        let val = val * 5
+        if a:word =~# a:cfg.base_rx
+            let val = val * 3
+        elseif a:word =~? a:cfg.base_rx
+            let val = val * 2
+        endif
     endif
     let val = val * (1 + len(a:cfg.base) / len(a:word))
     return [val, a:word]
 endf
 
 
-function! s:AssessWordInContext(context, words) "{{{3
-    let v = 0
+function! s:AssessWordInContext(word, context, words) "{{{3
+    let v = 1
     for word in a:words
-        let v += get(a:context, word, 0)
+        let c = get(a:context, word, 0)
+        let v += c
     endfor
     return v
 endf
