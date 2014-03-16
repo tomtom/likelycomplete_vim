@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    854
+" @Revision:    856
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -98,7 +98,7 @@ if !exists('g:likelycomplete#use_fuzzy_matches')
     " and |:Likelycompletemapcompletefunc|.
     " If you really believe in fuzzy matching, you might want to 
     " consider also setting |g:tlib#input#filter_mode| to 'fuzzy'.
-    let g:likelycomplete#use_fuzzy_matches = 1   "{{{2
+    let g:likelycomplete#use_fuzzy_matches = 0   "{{{2
 endif
 
 
