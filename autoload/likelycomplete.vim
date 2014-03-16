@@ -902,7 +902,7 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
     endfor
     " TLogVAR ft_options
     if get(ft_options, 'use_words', g:likelycomplete#use_words)
-        let completions += s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', ft_options)
+        let completions += tlib#list#Uniq(s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', ft_options), '', 1)
         " TLogVAR 3.1, len(completions)
     endif
     if !empty(a:base)
@@ -911,6 +911,7 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
         let completions = filter(completions, 'len(v:val) > lbase && v:val =~ rx')
         " TLogVAR 4, len(completions)
     endif
+    let completions = tlib#list#Uniq(completions, '', 1)
     if get(ft_options, 'assess_context', g:likelycomplete#assess_context)
         let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
         " TLogVAR 5, len(completions)
