@@ -82,6 +82,7 @@ Contents~
         g:likelycomplete#set_completefunc ..... |g:likelycomplete#set_completefunc|
         g:likelycomplete#auto_complete ........ |g:likelycomplete#auto_complete|
         g:likelycomplete#use_omnifunc ......... |g:likelycomplete#use_omnifunc|
+        g:likelycomplete#use_words ............ |g:likelycomplete#use_words|
         g:likelycomplete#match_beginning ...... |g:likelycomplete#match_beginning|
         g:likelycomplete#use_fuzzy_matches .... |g:likelycomplete#use_fuzzy_matches|
         g:likelycomplete#list_picker .......... |g:likelycomplete#list_picker|
@@ -224,6 +225,11 @@ g:likelycomplete#use_omnifunc  (default: 0)
     first invocation).
     This is only used in conjunction with |:Likelycompletemapselect| 
     and |:Likelycompletemapcompletefunc|.
+
+                                                    *g:likelycomplete#use_words*
+g:likelycomplete#use_words     (default: 1)
+    If true, add words in the current buffer to the list of possible 
+    completions.
 
                                                     *g:likelycomplete#match_beginning*
 g:likelycomplete#match_beginning (default: 0)
