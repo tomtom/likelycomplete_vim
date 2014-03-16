@@ -787,8 +787,9 @@ endf
 
 
 function! likelycomplete#SelectWord(base) "{{{3
+    " TLogVAR a:base
     let filetype = s:GetFiletype()
-    let words = s:GetCompletions(filetype, a:base, 0)
+    let words = s:GetSortedCompletions(filetype, a:base, 0)
     let fbase = g:likelycomplete#list_set_filter ? a:base : ''
     let word = likelycomplete#ListPicker_{g:likelycomplete#list_picker}('s', 'Select word:', words, fbase)
     if empty(word)
@@ -810,7 +811,7 @@ endf
 function! likelycomplete#EscapeAutoComplete(map) "{{{3
     let b:likelycomplete_disable_auto_complete = 1
     autocmd LikelyComplete CompleteDone <buffer> unlet! b:likelycomplete_disable_auto_complete
-                \ | autocmd! LikelyComplete CompleteDone <buffer>
+                \ | autocmd! LikelyComplete CompleteDone
 endf
 
 
@@ -831,6 +832,7 @@ endf
 let s:last_failed = []
 
 function! likelycomplete#Complete(findstart, base) "{{{3
+    " TLogVAR a:findstart, a:base
     if a:findstart
         let pos = getpos('.')
         let line = strpart(getline('.'), 0, col('.') - 1)
@@ -851,7 +853,7 @@ function! likelycomplete#Complete(findstart, base) "{{{3
         endif
     elseif a:base =~ '\D'
         try
-            let rv = s:GetCompletions(s:GetFiletype(), a:base, 1)
+            let rv = s:GetSortedCompletions(s:GetFiletype(), a:base, 1)
         catch
             echohl Error
             echom v:exception
@@ -869,10 +871,50 @@ function! likelycomplete#Complete(findstart, base) "{{{3
 endf
 
 
-function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
+let s:last_base = ''
+let s:last_filetype = ''
+let s:last_completions = []
+
+function! s:GetSortedCompletions(filetype, base, check_auto_complete) "{{{3
     " TLogVAR a:filetype, a:base, a:check_auto_complete
-    let completions = []
     let ft_options = s:FtOptions(a:filetype)
+    let reuse = s:last_filetype == a:filetype && strpart(a:base, 0, len(s:last_base)) ==# s:last_base
+    " TLogVAR reuse
+    " echom "DBG" len(s:last_completions)
+    let completions = reuse ? copy(s:last_completions) : s:GetCompletions(a:filetype, a:base, a:check_auto_complete, ft_options)
+    " TLogVAR 5.0, completions
+    " TLogVAR 5.0, len(completions)
+    if !empty(a:base)
+        let lbase = len(a:base)
+        let rx = s:GetVFilter(a:filetype, a:base)
+        let completions = filter(completions, 'len(v:val) > lbase && v:val =~ rx')
+        " TLogVAR 4, len(completions)
+        if get(ft_options, 'assess_context', g:likelycomplete#assess_context)
+            let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
+            " TLogVAR 5.1, len(completions)
+            " TLogVAR 5.1, completions
+        endif
+        if a:check_auto_complete && get(ft_options, 'auto_complete', g:likelycomplete#auto_complete)
+            let completions = insert(completions, a:base)
+            " TLogVAR 6, len(completions)
+        endif
+    endif
+    " TLogVAR 7, len(completions)
+    " echom "DBG" len(s:last_completions)
+    if !reuse
+        let s:last_base = a:base
+        let s:last_completions = copy(completions)
+        let s:last_filetype = a:filetype
+    endif
+    " TLogVAR ft_options
+    " TLogVAR completions
+    " TLogVAR 8, len(completions)
+    return completions
+endf
+
+
+function! s:GetCompletions(filetype, base, check_auto_complete, ft_options) "{{{3
+    let completions = []
     let fname = s:WordListFilename(a:filetype)
     if filereadable(fname)
         let completions += readfile(fname)
@@ -882,7 +924,7 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
     if exists('b:likelycomplete_completefunc')
         call add(fns, b:likelycomplete_completefunc)
     endif
-    if exists('+omnifunc') && get(ft_options, 'use_omnifunc', g:likelycomplete#use_omnifunc)
+    if exists('+omnifunc') && get(a:ft_options, 'use_omnifunc', g:likelycomplete#use_omnifunc)
         call add(fns, &l:omnifunc)
     endif
     for fn in fns
@@ -892,7 +934,7 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
             " TLogVAR 2, len(completions)
         endif
     endfor
-    for var in get(ft_options, 'other_sources', g:likelycomplete#other_sources)
+    for var in get(a:ft_options, 'other_sources', g:likelycomplete#other_sources)
         if exists(var) && !empty(var)
             exec 'let varval =' var
             if type(varval) == 1
@@ -909,29 +951,12 @@ function! s:GetCompletions(filetype, base, check_auto_complete) "{{{3
             unlet varval
         endif
     endfor
-    " TLogVAR ft_options
-    if get(ft_options, 'use_words', g:likelycomplete#use_words)
-        let completions += tlib#list#Uniq(s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', ft_options), '', 1)
+    " TLogVAR a:ft_options
+    if get(a:ft_options, 'use_words', g:likelycomplete#use_words)
+        let completions += tlib#list#Uniq(s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', a:ft_options), '', 1)
         " TLogVAR 3.1, len(completions)
     endif
-    if !empty(a:base)
-        let lbase = len(a:base)
-        let rx = s:GetVFilter(a:filetype, a:base)
-        let completions = filter(completions, 'len(v:val) > lbase && v:val =~ rx')
-        " TLogVAR 4, len(completions)
-    endif
     let completions = tlib#list#Uniq(completions, '', 1)
-    " TLogVAR 5.0, completions
-    if get(ft_options, 'assess_context', g:likelycomplete#assess_context)
-        let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
-        " TLogVAR 5.1, len(completions)
-        " TLogVAR 5.2, completions
-    endif
-    " TLogVAR ft_options
-    if a:check_auto_complete && get(ft_options, 'auto_complete', g:likelycomplete#auto_complete)
-        let completions = insert(completions, a:base)
-        " TLogVAR 6, len(completions)
-    endif
     return completions
 endf
 
