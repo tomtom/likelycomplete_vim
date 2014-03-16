@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    964
+" @Revision:    982
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -140,6 +140,7 @@ if !exists('g:likelycomplete#options')
     "                        supported for all filetypes; requires 
     "                        cms_rx or 'cms' to be set)
     "   strip_strings ...... Remove strings from lines
+    "   strip_multiline_strings .. Remove multi-line strings from the text
     "   strip_numbers ...... Remove numbers from lines
     "   strip_rx ........... Remove matching text from lines
     "   cms_rx ............. A |regexp| matching comments (override use 
@@ -166,6 +167,7 @@ if !exists('g:likelycomplete#options_javascript')
     " |g:likelycomplete#options|).
     " :read: let g:likelycomplete#options_javascript = {...}   "{{{2
     let g:likelycomplete#options_javascript = {
+                \ 'exclude_lines_rx': '^\s*//',
                 \ 'cms_rx': '\(/*%s*/\|\^\s\*//%s\)',
                 \ }
 endif
@@ -179,9 +181,10 @@ if !exists('g:likelycomplete#options_vim')
     " of also removing eligible identifiers following a string.
     " :read: let g:likelycomplete#options_vim = {...}   "{{{2
     let g:likelycomplete#options_vim = {
-                \ 'strip_rx': '["''].*$',
-                \ 'strip_strings': 0,
-                \ 'strip_comments': 0,
+                \ 'exclude_lines_rx': '^\s*"',
+                \ 'strip_strings': 1,
+                \ 'strip_multiline_strings': 0,
+                \ 'strip_comments': 1,
                 \ }
 endif
 
@@ -512,12 +515,20 @@ endif
 
 function! s:Tokenize(ft_options, text) "{{{3
     let text = a:text
-    if get(a:ft_options, 'strip_strings', 1)
-        let text = substitute(text, '\([''"]\).\{-}\1', ' ', 'g')
+    if get(a:ft_options, 'strip_multiline_strings', 1)
+        let text = s:RemoveStrings(a:ft_options, text)
     endif
     let _split_rx = get(a:ft_options, '_split_rx', '\W\+')
     " TLogVAR _split_rx
     return split(text, _split_rx)
+endf
+
+
+function! s:RemoveStrings(ft_options, text) "{{{3
+    let text = a:text
+    let text = substitute(text, '"\(\\"\|.\{-}\)\+"', ' ', 'g')
+    let text = substitute(text, '''\(''''\|\\''\|.\{-}\)\+''', ' ', 'g')
+    return text
 endf
 
 
@@ -576,6 +587,9 @@ function! s:GetBufferWords(bufnr, filetype, filename, ft_options) "{{{3
     if !empty(exclude_lines_rx)
         let lines = filter(lines, 'v:val !~ exclude_lines_rx')
         " TLogVAR 2, len(lines)
+    endif
+    if get(a:ft_options, 'strip_strings', 1)
+        let lines = map(lines, 's:RemoveStrings(a:ft_options, v:val)')
     endif
     let strip_rx = get(a:ft_options, 'strip_rx', '')
     " TLogVAR strip_rx

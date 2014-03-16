@@ -1,3 +1,7 @@
+version: "0.01"
+Initial Release
+
+version: "0.02"
   - g:likelycomplete#options_javascript; allow customization of  cms_rx
   - use_words: Add the current buffer's words to the list of possible completions
   - s:GetCompletions(): return unique words
@@ -8,5 +12,4 @@
   - Make sure not to call AutoComplete twice
   - Cache intermediate results in s:GetSortedCompletions()
   MD5 checksum: 1f31791acf08a1f9266203c071c59f2a
-version: "0.02"
 

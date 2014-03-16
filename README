@@ -1,32 +1,38 @@
+This plugin provides some sort of probabilistic insert mode completion 
+(see |ins-completion|). It doesn't provide semantic source code 
+completion that verifies the correctness of the code. LikelyComplete 
+solely aims at saving keystrokes.
+
 Once enabled for a filetype (see |g:likelycomplete_filetypes|), this 
 plugin observes any buffer of that filetype. It collects the words, 
 ranks them based on the probability of their occurrences (sort of) and 
 compiles a dictionary file that is fed to 'complete'. Any words that are 
 frequently used in files of enabled filetypes, are offered in the 
-completion list (see |i_CTRL-P|). The plugin also supports Insert mode 
-completion (see 'completefunc') that optionally takes into account the cursor's 
-context.
+completion list of |i_CTRL-P|. The plugin also supports insert mode 
+completion via 'completefunc' (see |i_CTRL-X_CTRL-U|) that optionally 
+takes into account the cursor's context.
 
 The word list on disk is updated when leaving vim. It could take a few 
 editing sessions to get at a usable word list.
 
 Featues:
 
-    - Generate word lists for use in 'complete' (see also |ins-completion| and 
-      |i_CTRL-P|)
+    - Generate word lists for use in 'complete' (see also 
+      |ins-completion| and |i_CTRL-P|)
+    - Ranking of words based on the probability of their occurrence
     - Set a 'completefunc' (incorporate results from the original 
       'completefunc' and optionally from 'omnifunc') -- see 
       |g:likelycomplete#set_completefunc|
 
-Additional featues for use as 'completefunc':
+Additional featues for use as 'completefunc' (|i_CTRL-X_CTRL-U|):
 
     - Auto-completion -- see |g:likelycomplete#auto_complete|
     - Fuzzy completion -- see |g:likelycomplete#use_fuzzy_matches|
     - Part of word completion -- see |g:likelycomplete#match_beginning|
-    - Context based sorting (not available for |i_CTRL-P|) -- see 
-      |g:likelycomplete#assess_context|
+    - Context-based ranking -- see |g:likelycomplete#assess_context|
     - If finding the right completion via VIM's own popup menu is too 
-      cumbersome, press <C-S-Space> -- see |g:likelycomplete#select_imap|
+      cumbersome, press <C-S-Space> -- see 
+      |g:likelycomplete#select_imap| and |g:likelycomplete#list_picker|
 
 By default only completion via |i_CTRL-P| is enabled (and only for those 
 filetypes listed in |g:likelycomplete_filetypes|). Most of the above options 
@@ -38,8 +44,8 @@ Related Work~
 There are of course other similar plugins you might want to check out if 
 likelycomplete doesn't meet your requirements:
 
-    - YouCompleteMe (supports semantic completion for C/C++/..., Python, C#)
     - neocomplcache
+    - YouCompleteMe
     - ...
 
 
