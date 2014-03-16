@@ -651,12 +651,13 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
             let context_words = []
             let iword = 0
             for word in words
-                let data[word].context = s:AssessContext(get(data[word], 'context', {}), context_words)
+                let data[word].context = s:AssessContext(word, get(data[word], 'context', {}), context_words)
                 call add(context_words, word)
                 if iword >= assess_context
                     call remove(context_words, 0)
+                else
+                    let iword += 1
                 endif
-                let iword += 1
             endfor
         endif
         for word in filter(keys(data), '!has_key(wordds, v:val)')
@@ -678,23 +679,23 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
 endf
 
 
-function! s:AssessContext(context, words) "{{{3
+function! s:AssessContext(word, context, words) "{{{3
     let old_words = copy(a:context)
     for word in a:words
         " TLogVAR word
         if has_key(a:context, word)
             let old_words[word] = -1
             if a:context[word] < g:likelycomplete#max
-                let a:context[word] += 5
+                let a:context[word] += 10
             endif
         else
-            let a:context[word] = 5
+            let a:context[word] = 10
         endif
     endfor
     for [word, val] in items(old_words)
         if val != -1
             let n = get(a:context, word, 0)
-            if n > 0
+            if n <= 1
                 call remove(a:context, word)
             elseif n > 0
                 let a:context[word] = n - 1
