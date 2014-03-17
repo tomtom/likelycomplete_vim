@@ -256,7 +256,7 @@ endif
 
 
 function! likelycomplete#LoadData() "{{{3
-    " echom "DBG likelycomplete#LoadData"
+    " echom 'DBG likelycomplete#LoadData'
     let s:likelycomplete_data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})
     " let g:likelycomplete#data = s:likelycomplete_data " DBG
     return ''
@@ -541,11 +541,11 @@ function! likelycomplete#AsyncUpdateWordList(servername, filetype, filename) "{{
     let servers = split(serverlist(), '\n')
     " TLogVAR servers
     if index(servers, a:servername) != -1
-        let cmd = printf('%s --servername %s --remote-expr "likelycomplete\#LoadData()"',
+        let cmd = printf('%s --servername %s --remote-expr "likelycomplete#LoadData()"',
                     \ g:likelycomplete#prgname,
                     \ a:servername)
         let run = printf(g:likelycomplete#run_async, cmd)
-        exec 'silent!' run
+        exec 'silent!' escape(run, '#%')
     endif
     qall!
 endf
@@ -560,14 +560,14 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
         if getbufvar(a:bufnr, 'likelycomplete_done', 0)
             return
         endif
-        let cmd = printf('%s -R -n -c "call likelycomplete\#AsyncUpdateWordList(%s, %s, %s)"',
+        let cmd = printf('%s -R -n -c "call likelycomplete#AsyncUpdateWordList(%s, %s, %s)"',
                     \ g:likelycomplete#prgname,
                     \ string(v:servername),
                     \ string(a:filetype),
                     \ string(fnameescape(a:filename)))
                     " \ g:likelycomplete#prgname =~ '\<gvim\>' ? '-c suspend' : '',
         let run = printf(g:likelycomplete#run_async, cmd)
-        exec 'silent!' run
+        exec 'silent!' escape(run, '#%')
         call setbufvar(a:bufnr, 'likelycomplete_done', 1)
     endif
 endf
