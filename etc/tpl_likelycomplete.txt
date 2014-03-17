@@ -33,8 +33,8 @@ Additional featues for use as 'completefunc' (|i_CTRL-X_CTRL-U|):
     - Fuzzy completion -- see |g:likelycomplete#use_fuzzy_matches|
     - Part of word completion -- see |g:likelycomplete#match_beginning|
     - Context-based ranking -- see |g:likelycomplete#assess_context|
-    - If finding the right completion via VIM's own popup menu is too 
-      cumbersome, press <C-S-Space> -- see 
+    - If finding the right completion via VIM's own 
+      |ins-completion-menu| is too cumbersome, press <C-S-Space> -- see 
       |g:likelycomplete#select_imap| and |g:likelycomplete#list_picker|
 
 By default only completion via |i_CTRL-P| is enabled (and only for those 

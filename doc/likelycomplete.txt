@@ -33,8 +33,8 @@ Additional featues for use as 'completefunc' (|i_CTRL-X_CTRL-U|):
     - Fuzzy completion -- see |g:likelycomplete#use_fuzzy_matches|
     - Part of word completion -- see |g:likelycomplete#match_beginning|
     - Context-based ranking -- see |g:likelycomplete#assess_context|
-    - If finding the right completion via VIM's own popup menu is too 
-      cumbersome, press <C-S-Space> -- see 
+    - If finding the right completion via VIM's own 
+      |ins-completion-menu| is too cumbersome, press <C-S-Space> -- see 
       |g:likelycomplete#select_imap| and |g:likelycomplete#list_picker|
 
 By default only completion via |i_CTRL-P| is enabled (and only for those 
@@ -102,6 +102,8 @@ Contents~
         g:likelycomplete#assess_context ....... |g:likelycomplete#assess_context|
         g:likelycomplete#base ................. |g:likelycomplete#base|
         g:likelycomplete#max .................. |g:likelycomplete#max|
+        g:likelycomplete#base_context ......... |g:likelycomplete#base_context|
+        g:likelycomplete#max_context .......... |g:likelycomplete#max_context|
         g:likelycomplete#run_async ............ |g:likelycomplete#run_async|
         g:likelycomplete#prgname .............. |g:likelycomplete#prgname|
         g:likelycomplete#debug ................ |g:likelycomplete#debug|
@@ -325,12 +327,23 @@ g:likelycomplete#base          (default: 50)
 g:likelycomplete#max           (default: 10000)
     The maximum number of observations taken into account.
 
+                                                    *g:likelycomplete#base_context*
+g:likelycomplete#base_context  (default: 20)
+    Forget a word in context after N files where it was missing.
+
+                                                    *g:likelycomplete#max_context*
+g:likelycomplete#max_context   (default: 1000)
+    The max weight for words in context.
+
+    NOTE: The actual max value is |g:likelycomplete#max_context| + 
+    |g:likelycomplete#base_context| - 1.
+
                                                     *g:likelycomplete#run_async*
 g:likelycomplete#run_async     (default: has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! %s > /dev/null &')
     How to run |g:likelycomplete#prgname|.
 
                                                     *g:likelycomplete#prgname*
-g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? v:progname : '')
+g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (executable('vim') ? 'vim' : v:progname) : '')
     Non-empty use this program to asynchronously update word lists.
     It's preferable to use vim instead of gvim.
 
