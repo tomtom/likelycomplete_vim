@@ -246,7 +246,7 @@ endif
 if !exists('g:likelycomplete#prgname')
     " Non-empty use this program to asynchronously update word lists.
     " It's preferable to use vim instead of gvim.
-    let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? v:progname : ''  "{{{2
+    let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (executable('vim') ? 'vim' : v:progname) : ''  "{{{2
 endif
 
 
