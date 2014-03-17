@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    982
+" @Revision:    996
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -234,6 +234,21 @@ endif
 if !exists('g:likelycomplete#max')
     " The maximum number of observations taken into account.
     let g:likelycomplete#max = 10000   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#base_context')
+    " Forget a word in context after N files where it was missing.
+    let g:likelycomplete#base_context = 20   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#max_context')
+    " The max weight for words in context.
+    "
+    " NOTE: The actual max value is |g:likelycomplete#max_context| + 
+    " |g:likelycomplete#base_context| - 1.
+    let g:likelycomplete#max_context = 1000   "{{{2
 endif
 
 
@@ -700,11 +715,11 @@ function! s:AssessContext(word, context, words) "{{{3
         " TLogVAR word
         if has_key(a:context, word)
             let old_words[word] = -1
-            if a:context[word] < g:likelycomplete#max
-                let a:context[word] += 10
+            if a:context[word] < g:likelycomplete#max_context
+                let a:context[word] += g:likelycomplete#base_context
             endif
         else
-            let a:context[word] = 10
+            let a:context[word] = g:likelycomplete#base_context
         endif
     endfor
     for [word, val] in items(old_words)
