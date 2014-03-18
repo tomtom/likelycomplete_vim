@@ -49,6 +49,7 @@ likelycomplete doesn't meet your requirements:
 
     - neocomplcache
     - YouCompleteMe
+    - AutoComplPop
     - ...
 
 
