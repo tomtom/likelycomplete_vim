@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1001
+" @Revision:    1002
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -331,8 +331,8 @@ function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
     if !empty(g:likelycomplete#select_imap)
         call likelycomplete#MapSelectWord(g:likelycomplete#select_imap)
     endif
-    exec 'autocmd! LikelyComplete BufUnload <buffer='. a:bufnr .'>'
-    exec 'autocmd LikelyComplete BufUnload <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(a:filetype) .','. string(expand('%:p')) .')'
+    exec 'autocmd! LikelyComplete BufDelete <buffer='. a:bufnr .'>'
+    exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(a:filetype) .','. string(expand('%:p')) .')'
 endf
 
 
