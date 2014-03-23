@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1002
+" @Revision:    1020
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -254,13 +254,14 @@ endif
 
 if !exists('g:likelycomplete#run_async')
     " How to run |g:likelycomplete#prgname|.
-    let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! %s > /dev/null &'   "{{{2
+    let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! ( %s >/dev/null ) &'   "{{{2
 endif
 
 
 if !exists('g:likelycomplete#prgname')
     " Non-empty use this program to asynchronously update word lists.
-    " It's preferable to use vim instead of gvim.
+    " It's preferable to use vim instead of gvim. You should make sure 
+    " though that your version of vim has |+clientserver| support.
     let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (executable('vim') ? 'vim' : v:progname) : ''  "{{{2
 endif
 
@@ -271,6 +272,7 @@ endif
 
 
 function! likelycomplete#LoadData() "{{{3
+    if g:likelycomplete#debug | echom 'likelycomplete#LoadData' | endif
     let s:likelycomplete_data = tlib#persistent#Get(g:likelycomplete#data_cfile, {'version': 1, 'ft': {}, 'ft_options': {}})
     return ''
 endf
@@ -529,16 +531,28 @@ function! likelycomplete#AsyncUpdateWordList(servername, filetype, filename) "{{
     if has('gui_running')
         suspend
     endif
+    " set verbosefile=$HOME/tmp/lc.log
+    " set verbose=12
     call s:UpdateWordListNow(-1, a:filetype, a:filename)
     let servers = split(serverlist(), '\n')
     if index(servers, a:servername) != -1
         let cmd = printf('%s --servername %s --remote-expr "likelycomplete#LoadData()"',
                     \ g:likelycomplete#prgname,
                     \ a:servername)
-        let run = printf(g:likelycomplete#run_async, cmd)
-        exec 'silent!' escape(run, '#%')
+        call s:Run(cmd)
     endif
     qall!
+endf
+
+
+function! s:Run(cmd) "{{{3
+    let run = printf(g:likelycomplete#run_async, a:cmd)
+    if g:likelycomplete#debug
+        " TLogVAR run
+        exec 'silent' escape(run, '#%')
+    else
+        exec 'silent!' escape(run, '#%')
+    endif
 endf
 
 
@@ -556,15 +570,15 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
                     \ string(v:servername),
                     \ string(a:filetype),
                     \ string(fnameescape(a:filename)))
-                    " \ g:likelycomplete#prgname =~ '\<gvim\>' ? '-c suspend' : '',
-        let run = printf(g:likelycomplete#run_async, cmd)
-        exec 'silent!' escape(run, '#%')
+        " \ g:likelycomplete#prgname =~ '\<gvim\>' ? '-c suspend' : '',
+        call s:Run(cmd)
         call setbufvar(a:bufnr, 'likelycomplete_done', 1)
     endif
 endf
 
 
 function! s:GetBufferWords(bufnr, filetype, filename, ft_options) "{{{3
+    " TLogVAR a:bufnr, a:filetype, a:filename, a:ft_options, bufnr('%')
     if bufnr('%') == a:bufnr
         let lines = getline(1, line('$'))
     elseif filereadable(a:filename)
