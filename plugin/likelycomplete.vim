@@ -2,7 +2,7 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @GIT:         http://github.com/tomtom/likelycomplete_vim
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    89
+" @Revision:    99
 " GetLatestVimScripts: 4889 0 :AutoInstall: likelycomplete.vim
 
 if &cp || exists("loaded_likelycomplete")
@@ -23,6 +23,9 @@ if !exists('g:likelycomplete_filetypes')
     " variable. You should also call |likelycomplete#RemoveFiletype()| 
     " to fully remove any cached information for this filetype.
     "
+    " The pseudo-filetype "_" is for buffers with no filetype (i.e., 
+    " 'ft' is empty).
+    "
     "                                                   *b:likelycomplete_filetype*
     " If the variable b:likelycomplete_filetype is defined on FileType 
     " events, its value is used instead of 'filetype'. LikelyComplete 
@@ -33,9 +36,34 @@ if !exists('g:likelycomplete_filetypes')
 endif
 
 
+if !exists('g:likelycomplete_per_window')
+    "                                                   *w:likelycomplete_filetype*
+    " If true, support window specific values of 
+    " |b:likelycomplete_filetype|.
+    "
+    " If you have several windows of one buffer with differing 
+    " filetypes, those should not conflict with respect to the following 
+    " options (see |g:likelycomplete#options| for details): >
+    "
+    "   set_completefunc
+    "   auto_complete
+    "
+    " and maybe some more.
+    "
+    " NOTE: This variable should not be changed once the plugin was 
+    " loaded.
+    let g:likelycomplete_per_window = 0   "{{{2
+endif
+
+
 augroup LikelyComplete
     autocmd!
-    autocmd! LikelyComplete Filetype * if exists('b:likelycomplete_filetype') | call likelycomplete#SetupBuffer(b:likelycomplete_filetype, expand("<abuf>")) | endif
+    if g:likelycomplete_per_window
+        autocmd LikelyComplete Filetype * if exists('w:likelycomplete_filetype') | call likelycomplete#SetupBuffer(w:likelycomplete_filetype, expand("<abuf>")) | endif
+        autocmd LikelyComplete Filetype * if !exists('w:likelycomplete_filetype') && exists('b:likelycomplete_filetype') | call likelycomplete#SetupBuffer(b:likelycomplete_filetype, expand("<abuf>")) | endif
+    else
+        autocmd LikelyComplete Filetype * if exists('b:likelycomplete_filetype') | call likelycomplete#SetupBuffer(b:likelycomplete_filetype, expand("<abuf>")) | endif
+    endif
 augroup END
 
 
