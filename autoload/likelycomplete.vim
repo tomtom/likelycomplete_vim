@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1085
+" @Revision:    1096
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -344,8 +344,14 @@ function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
     if !empty(g:likelycomplete#select_imap)
         call likelycomplete#MapSelectWord(g:likelycomplete#select_imap)
     endif
-    exec 'autocmd! LikelyComplete BufDelete <buffer='. a:bufnr .'>'
-    exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(a:filetype) .','. string(expand('%:p')) .')'
+    " if g:likelycomplete_per_window && exists('w:likelycomplete_filetype')
+    "     echohl WarningMsg
+    "     echom "LikelyComplete: No update when using w:likelycomplete_filetype"
+    "     echohl NONE
+    " else
+        exec 'autocmd! LikelyComplete BufDelete <buffer='. a:bufnr .'>'
+        exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(a:filetype) .','. string(expand('%:p')) .')'
+    " endif
 endf
 
 
@@ -895,6 +901,7 @@ let s:last_filetype = ''
 let s:last_completions = []
 
 function! s:GetSortedCompletions(filetype, base, insert_base) "{{{3
+    " TLogVAR 0, localtime()
     let ft_options = s:FtOptions(a:filetype)
     let reuse = s:last_filetype == a:filetype && strpart(a:base, 0, len(s:last_base)) ==# s:last_base
     " TLogVAR reuse
@@ -918,6 +925,7 @@ function! s:GetSortedCompletions(filetype, base, insert_base) "{{{3
         let s:last_filetype = a:filetype
         " TLogVAR 5, localtime(), len(completions)
     endif
+    " TLogVAR 'end', localtime(), len(completions)
     return completions
 endf
 
