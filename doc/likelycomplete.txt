@@ -77,6 +77,7 @@ LikelyComplete for certain filetypes.
 Contents~
 
         g:likelycomplete_filetypes ............ |g:likelycomplete_filetypes|
+        g:likelycomplete_per_window ........... |g:likelycomplete_per_window|
         LikelycompleteSetupFiletype ........... |LikelycompleteSetupFiletype()|
         :Likelycomplete ....................... |:Likelycomplete|
         :Likelycompleteremovewords ............ |:Likelycompleteremovewords|
@@ -88,12 +89,11 @@ Contents~
         g:likelycomplete#select_imap .......... |g:likelycomplete#select_imap|
         g:likelycomplete#set_completefunc ..... |g:likelycomplete#set_completefunc|
         g:likelycomplete#auto_complete ........ |g:likelycomplete#auto_complete|
-        g:likelycomplete#use_omnifunc ......... |g:likelycomplete#use_omnifunc|
-        g:likelycomplete#use_words ............ |g:likelycomplete#use_words|
+        g:likelycomplete#sources .............. |g:likelycomplete#sources|
+        g:likelycomplete#dictionaries ......... |g:likelycomplete#dictionaries|
         g:likelycomplete#match_beginning ...... |g:likelycomplete#match_beginning|
         g:likelycomplete#use_fuzzy_matches .... |g:likelycomplete#use_fuzzy_matches|
         g:likelycomplete#list_picker .......... |g:likelycomplete#list_picker|
-        g:likelycomplete#other_sources ........ |g:likelycomplete#other_sources|
         g:likelycomplete#data_cfile ........... |g:likelycomplete#data_cfile|
         g:likelycomplete#options_javascript ... |g:likelycomplete#options_javascript|
         g:likelycomplete#options_vim .......... |g:likelycomplete#options_vim|
@@ -138,12 +138,33 @@ g:likelycomplete_filetypes     (default: [])
     variable. You should also call |likelycomplete#RemoveFiletype()| 
     to fully remove any cached information for this filetype.
 
+    The pseudo-filetype "_" is for buffers with no filetype (i.e., 
+    'ft' is empty).
+
                                                       *b:likelycomplete_filetype*
     If the variable b:likelycomplete_filetype is defined on FileType 
     events, its value is used instead of 'filetype'. LikelyComplete 
     is automatically enabled for all buffers where the 
     b:likelycomplete_filetype is defined. This variable can be used to 
     generate project-specific word lists.
+
+                                                    *g:likelycomplete_per_window*
+g:likelycomplete_per_window    (default: 0)
+                                                      *w:likelycomplete_filetype*
+    If true, support window specific values of 
+    |b:likelycomplete_filetype|.
+
+    If you have several windows of one buffer with differing 
+    filetypes, those should not conflict with respect to the following 
+    options (see |g:likelycomplete#options| for details): >
+
+      set_completefunc
+      auto_complete
+
+<   and maybe some more.
+
+    NOTE: This variable should not be changed once the plugin was 
+    loaded.
 
                                                     *LikelycompleteSetupFiletype()*
 LikelycompleteSetupFiletype(filetype)
@@ -227,18 +248,33 @@ g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 
     This option requires |g:likelycomplete#set_completefunc| to be 
     true or |:Likelycompletemapcompletefunc| to be called.
 
-                                                    *g:likelycomplete#use_omnifunc*
-g:likelycomplete#use_omnifunc  (default: 0)
-    If true, include completions from 'omnifunc'.
-    Please be aware that some omnifunc take their time (at least on 
-    first invocation).
+                                                    *g:likelycomplete#sources*
+g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dict'])
+    A list of sources that will be used for compiling the list of 
+    possible completions.
+
+    Possible elements:
+
+      likelycomplete ... Include information gathered by 
+                   the LikelyComplete plugin
+      omnifunc ... Include results from 'omnifunc' -- please be aware 
+                   that some omnifunc take their time (at least on 
+                   first invocation).
+      words ...... Include the current buffer's keywords
+      complete ... Include results from 'complete'
+      dict ....... Use dictionary files (see 
+                   |g:likelycomplete#dictionaries|)
+      g:{VAR} .... A global variable
+
     This is only used in conjunction with |:Likelycompletemapselect| 
     and |:Likelycompletemapcompletefunc|.
 
-                                                    *g:likelycomplete#use_words*
-g:likelycomplete#use_words     (default: 1)
-    If true, add words in the current buffer to the list of possible 
-    completions.
+                                                    *g:likelycomplete#dictionaries*
+g:likelycomplete#dictionaries  (default: {})
+    A dictionary of 'spelllang' => dictionary file.
+
+    CAUTION: Please be aware that the value of spelllang is currently 
+    ignored and all dictionary files are used.
 
                                                     *g:likelycomplete#match_beginning*
 g:likelycomplete#match_beginning (default: 0)
@@ -268,13 +304,6 @@ g:likelycomplete#list_picker   (default: 'tlib')
       list .... A list
       base .... A string that should be selected (may be ignored; see 
                 also |g:likelycomplete#list_set_filter|)
-
-                                                    *g:likelycomplete#other_sources*
-g:likelycomplete#other_sources (default: [])
-    A list of variable names, whose values will be added to the word 
-    list.
-    This is only used in conjunction with |:Likelycompletemapselect| 
-    and |:Likelycompletemapcompletefunc|.
 
                                                     *g:likelycomplete#data_cfile*
 g:likelycomplete#data_cfile    (default: tlib#persistent#Filename('likelycomplete', 'data', 1))
@@ -340,13 +369,14 @@ g:likelycomplete#max_context   (default: 1000)
     |g:likelycomplete#base_context| - 1.
 
                                                     *g:likelycomplete#run_async*
-g:likelycomplete#run_async     (default: has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! %s > /dev/null &')
+g:likelycomplete#run_async     (default: has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! ( %s >/dev/null ) &')
     How to run |g:likelycomplete#prgname|.
 
                                                     *g:likelycomplete#prgname*
 g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (executable('vim') ? 'vim' : v:progname) : '')
     Non-empty use this program to asynchronously update word lists.
-    It's preferable to use vim instead of gvim.
+    It's preferable to use vim instead of gvim. You should make sure 
+    though that your version of vim has |+clientserver| support.
 
                                                     *g:likelycomplete#debug*
 g:likelycomplete#debug         (default: 0)
