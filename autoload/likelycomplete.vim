@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1096
+" @Revision:    1097
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -587,7 +587,7 @@ let s:sfile = expand('<sfile>:p')
 
 function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     let ft_options = s:FtOptions(a:filetype)
-    if index(a:ft_options.Get('sources'), 'likelycomplete') == -1
+    if index(ft_options.Get('sources'), 'likelycomplete') == -1
         return
     endif
     if empty(g:likelycomplete#prgname) || empty(g:likelycomplete#run_async) || s:sfile == fnamemodify(a:filename, ':p')
