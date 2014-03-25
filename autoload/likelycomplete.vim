@@ -586,6 +586,10 @@ endf
 let s:sfile = expand('<sfile>:p')
 
 function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
+    let ft_options = s:FtOptions(a:filetype)
+    if index(a:ft_options.Get('sources'), 'likelycomplete') == -1
+        return
+    endif
     if empty(g:likelycomplete#prgname) || empty(g:likelycomplete#run_async) || s:sfile == fnamemodify(a:filename, ':p')
         call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
     else
