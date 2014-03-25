@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1097
+" @Revision:    1102
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -506,22 +506,33 @@ endf
 
 function! s:SetupComplete(filetype) "{{{3
     let fname = s:WordListFilename(a:filetype)
-    if filereadable(fname)
-        let opt = 'k'. fname
-        if stridx(&l:complete, opt) == -1
-            exec 'setl complete+='. escape(opt, ' ,\')
-        endif
-        if stridx(&l:dictionary, fname) == -1
-            exec 'setl dictionary+='. escape(fname, ' ,\')
-        endif
-    endif
+    call s:AddDict(fname)
     let ft_options = s:FtOptions(a:filetype)
+    let sources = ft_options.Get('sources')
+    if index(sources, 'dict') != -1
+        for [spelllang, dict] in items(ft_options.Get('dictionaries'))
+            call s:AddDict(dict)
+        endfor
+    endif
     if ft_options.Get('set_completefunc')
         call likelycomplete#SetComleteFunc()
         if ft_options.Get('auto_complete')
             autocmd! LikelyComplete CursorMovedI <buffer>
             autocmd LikelyComplete CursorMovedI <buffer> if !exists('b:likelycomplete_disable_auto_complete') && !pumvisible() | call s:AutoComplete() | endif
             imap <buffer> <silent> <c-g><c-u> <c-\><c-o>:call likelycomplete#EscapeAutoComplete('')<cr>
+        endif
+    endif
+endf
+
+
+function! s:AddDict(fname) "{{{3
+    if filereadable(a:fname)
+        let opt = 'k'. a:fname
+        if stridx(&l:complete, opt) == -1
+            exec 'setl complete+='. escape(opt, ' ,\')
+        endif
+        if stridx(&l:dictionary, a:fname) == -1
+            exec 'setl dictionary+='. escape(a:fname, ' ,\')
         endif
     endif
 endf
