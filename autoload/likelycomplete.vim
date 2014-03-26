@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1102
+" @Revision:    1108
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -332,15 +332,17 @@ endf
 
 
 function! likelycomplete#SetupFiletype(filetype, options) "{{{3
-    if s:EnsureFiletype(a:filetype, a:options)
-        call likelycomplete#SetupBuffer(a:filetype, bufnr('%'))
-    endif
+    let filetype = s:ValidFiletype(a:filetype)
+    call s:EnsureFiletype(filetype, a:options)
+    call likelycomplete#SetupBuffer(filetype, bufnr('%'))
 endf
 
 
 function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
-    call s:EnsureFiletype(a:filetype)
-    call s:SetupComplete(a:filetype)
+    let filetype = s:ValidFiletype(a:filetype)
+    " TLogVAR filetype, a:bufnr
+    call s:EnsureFiletype(filetype)
+    call s:SetupComplete(filetype)
     if !empty(g:likelycomplete#select_imap)
         call likelycomplete#MapSelectWord(g:likelycomplete#select_imap)
     endif
@@ -350,7 +352,7 @@ function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
     "     echohl NONE
     " else
         exec 'autocmd! LikelyComplete BufDelete <buffer='. a:bufnr .'>'
-        exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(a:filetype) .','. string(expand('%:p')) .')'
+        exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(filetype) .','. string(expand('%:p')) .')'
     " endif
 endf
 
@@ -375,6 +377,11 @@ function! s:SetFiletypeOptions(filetype, options) "{{{3
 endf
 
 
+function! s:ValidFiletype(filetype) "{{{3
+    return empty(a:filetype) ? '_' : a:filetype
+endf
+
+
 function! s:GetFiletype() "{{{3
     if g:likelycomplete_per_window && exists('w:likelycomplete_filetype')
         let ft = w:likelycomplete_filetype
@@ -383,10 +390,7 @@ function! s:GetFiletype() "{{{3
     else
         let ft = &l:filetype
     endif
-    if empty(ft)
-        let ft = '_'
-    endif
-    return ft
+    return s:ValidFiletype(ft)
 endf
 
 
@@ -468,6 +472,7 @@ let s:setup = {}
 function! s:EnsureFiletype(...) "{{{3
     let filetype = a:0 >= 1 ? a:1 : s:GetFiletype()
     let options  = a:0 >= 2 ? a:2 : {}
+    " TLogVAR filetype, options
     if !has_key(s:likelycomplete_data.ft, filetype)
         call s:SetData(filetype, {})
         call s:SetFiletypeOptions(filetype, options)
@@ -486,14 +491,15 @@ endf
 
 
 function! likelycomplete#RemoveFiletype(filetype) "{{{3
-    unlet! s:likelycomplete_data.ft[a:filetype]
-    unlet! s:likelycomplete_data.ft_options[a:filetype]
-    let fname = s:WordListFilename(a:filetype)
+    let filetype = s:ValidFiletype(a:filetype)
+    unlet! s:likelycomplete_data.ft[filetype]
+    unlet! s:likelycomplete_data.ft_options[filetype]
+    let fname = s:WordListFilename(filetype)
     if filereadable(fname)
         call delete(fname)
     endif
     call s:SaveData()
-    echom "LikelyComplete: Removed support for" a:filetype
+    echom "LikelyComplete: Removed support for" filetype
 endf
 
 
@@ -566,12 +572,13 @@ endf
 
 
 function! likelycomplete#AsyncUpdateWordList(servername, filetype, filename) "{{{3
+    let filetype = s:ValidFiletype(a:filetype)
     if has('gui_running')
         suspend
     endif
     " set verbosefile=$HOME/tmp/lc.log
     " set verbose=12
-    call s:UpdateWordListNow(-1, a:filetype, a:filename)
+    call s:UpdateWordListNow(-1, filetype, a:filename)
     let servers = split(serverlist(), '\n')
     if index(servers, a:servername) != -1
         let cmd = printf('%s --servername %s --remote-expr "likelycomplete#LoadData()"',
