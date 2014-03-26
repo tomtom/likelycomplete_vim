@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1120
+" @Revision:    1123
 
 scriptencoding utf-8
 
@@ -93,9 +93,13 @@ if !exists('g:likelycomplete#sources')
     "                   completions
     "   files ......... Use files
     "
+    " If an entry begins with "?", it is only evaluated when the list of 
+    " possible completions is empty, i.e. none of the previous items 
+    " yielded any completions.
+    "
     " This is only used in conjunction with |:Likelycompletemapselect| 
     " and |:Likelycompletemapcompletefunc|.
-    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries', '?files']   "{{{2
+    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries']   "{{{2
 endif
 
 

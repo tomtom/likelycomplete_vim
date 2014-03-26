@@ -249,7 +249,7 @@ g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 
     true or |:Likelycompletemapcompletefunc| to be called.
 
                                                     *g:likelycomplete#sources*
-g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries', '?files'])
+g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries'])
     A list of sources that will be used for compiling the list of 
     possible completions.
 
@@ -272,6 +272,10 @@ g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionari
                       options and returns a list of possible 
                       completions
       files ......... Use files
+
+    If an entry begins with "?", it is only evaluated when the list of 
+    possible completions is empty, i.e. none of the previous items 
+    yielded any completions.
 
     This is only used in conjunction with |:Likelycompletemapselect| 
     and |:Likelycompletemapcompletefunc|.
