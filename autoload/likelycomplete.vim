@@ -1,6 +1,8 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1108
+" @Revision:    1120
+
+scriptencoding utf-8
 
 
 if !exists('g:loaded_tlib') || g:loaded_tlib < 107
@@ -73,20 +75,27 @@ if !exists('g:likelycomplete#sources')
     "
     " Possible elements:
     "
-    "   likelycomplete ... Include information gathered by 
-    "                the LikelyComplete plugin
-    "   omnifunc ... Include results from 'omnifunc' -- please be aware 
-    "                that some omnifunc take their time (at least on 
-    "                first invocation).
-    "   words ...... Include the current buffer's keywords
-    "   complete ... Include results from 'complete'
-    "   dict ....... Use dictionary files (see 
-    "                |g:likelycomplete#dictionaries|)
-    "   g:{VAR} .... A global variable
+    "   likelycomplete .. Include information gathered by 
+    "                   the LikelyComplete plugin
+    "   omnifunc ...... Include results from 'omnifunc' -- please be 
+    "                   aware that some omnifunc take their time (at 
+    "                   least on first invocation).
+    "   words ......... Include the current buffer's keywords
+    "   complete ...... Include results from 'complete'
+    "   dictionaries .. Use dictionary files as defined in 
+    "                   |g:likelycomplete#dictionaries|
+    "   dictionary .... Use dictionary files as defined in 
+    "                   'dictionary'
+    "   g:{VAR} ....... A global variable
+    "   FUNCTION ...... A function that takes as arguments the filetype, 
+    "                   the base, a dictionary of filetype-specific 
+    "                   options and returns a list of possible 
+    "                   completions
+    "   files ......... Use files
     "
     " This is only used in conjunction with |:Likelycompletemapselect| 
     " and |:Likelycompletemapcompletefunc|.
-    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dict']   "{{{2
+    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries', '?files']   "{{{2
 endif
 
 
@@ -515,7 +524,7 @@ function! s:SetupComplete(filetype) "{{{3
     call s:AddDict(fname)
     let ft_options = s:FtOptions(a:filetype)
     let sources = ft_options.Get('sources')
-    if index(sources, 'dict') != -1
+    if index(sources, 'dictionaries') != -1
         for [spelllang, dict] in items(ft_options.Get('dictionaries'))
             call s:AddDict(dict)
         endfor
@@ -973,12 +982,19 @@ endf
 function! s:GetCompletions(filetype, base, ft_options) "{{{3
     let completions = []
     let completefn = ''
+    let wordlist_filename = s:WordListFilename(a:filetype)
     for source in a:ft_options.Get('sources')
         " TLogVAR localtime(), source
+        if source[0:0] == '?'
+            if empty(completions)
+                let source = source[1 : -1]
+            else
+                continue
+            endif
+        endif
         if source == 'likelycomplete'
-            let fname = s:WordListFilename(a:filetype)
-            if filereadable(fname)
-                let completions += s:Readfile(fname)
+            if filereadable(wordlist_filename)
+                let completions += s:Readfile(wordlist_filename)
             endif
         elseif source == 'omnifunc'
             if exists('+omnifunc')
@@ -990,13 +1006,21 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
             if exists('b:likelycomplete_completefunc')
                 let completefn = b:likelycomplete_completefunc
             endif
-        elseif source == 'dict'
+        elseif source == 'dictionaries'
             let dicts = a:ft_options.Get('dictionaries')
             for [spelllang, dict] in items(dicts)
-                if filereadable(dict)
+                if filereadable(dict) && dict != wordlist_filename
                     let completions += s:Readfile(dict)
                 endif
             endfor
+        elseif source == 'dictionary'
+            for dict in split(&dictionary, ',')
+                if filereadable(dict) && dict != wordlist_filename
+                    let completions += s:Readfile(dict)
+                endif
+            endfor
+        elseif source == 'files'
+            let completions += glob('*')
         elseif source =~# 'g:'
             if exists(source) && !empty(source)
                 exec 'let varval =' source
@@ -1012,6 +1036,8 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
                 let completions += words
                 unlet varval
             endif
+        elseif exists('*'. source)
+            let completions += call(source, [a:filetype, a:base, a:ft_options])
         else
             echohl Error
             echom 'LikelyComplete: Unsupported source:' string(source)

@@ -249,22 +249,29 @@ g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 
     true or |:Likelycompletemapcompletefunc| to be called.
 
                                                     *g:likelycomplete#sources*
-g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dict'])
+g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries', '?files'])
     A list of sources that will be used for compiling the list of 
     possible completions.
 
     Possible elements:
 
-      likelycomplete ... Include information gathered by 
-                   the LikelyComplete plugin
-      omnifunc ... Include results from 'omnifunc' -- please be aware 
-                   that some omnifunc take their time (at least on 
-                   first invocation).
-      words ...... Include the current buffer's keywords
-      complete ... Include results from 'complete'
-      dict ....... Use dictionary files (see 
-                   |g:likelycomplete#dictionaries|)
-      g:{VAR} .... A global variable
+      likelycomplete .. Include information gathered by 
+                      the LikelyComplete plugin
+      omnifunc ...... Include results from 'omnifunc' -- please be 
+                      aware that some omnifunc take their time (at 
+                      least on first invocation).
+      words ......... Include the current buffer's keywords
+      complete ...... Include results from 'complete'
+      dictionaries .. Use dictionary files as defined in 
+                      |g:likelycomplete#dictionaries|
+      dictionary .... Use dictionary files as defined in 
+                      'dictionary'
+      g:{VAR} ....... A global variable
+      FUNCTION ...... A function that takes as arguments the filetype, 
+                      the base, a dictionary of filetype-specific 
+                      options and returns a list of possible 
+                      completions
+      files ......... Use files
 
     This is only used in conjunction with |:Likelycompletemapselect| 
     and |:Likelycompletemapcompletefunc|.
