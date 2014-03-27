@@ -36,3 +36,8 @@ version: "0.03"
   MD5 checksum: 8e0bd638cd179e37c391ab1802752ed4
 version: "0.04"
 
+  - GetWordsSortedByRelevance(): Minor change to weighting len(base)/len(word)
+  - GetCompletions: Filter list ASAP in order to reduce runtime of tlib#list#Uniq(); fix s:Readlines: return copy of lines
+  MD5 checksum: 8e0bd638cd179e37c391ab1802752ed4
+version: "0.04"
+
