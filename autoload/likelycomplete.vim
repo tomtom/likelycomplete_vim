@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1127
+" @Revision:    1147
 
 scriptencoding utf-8
 
@@ -943,9 +943,10 @@ function! s:GetSortedCompletions(filetype, base, insert_base) "{{{3
     let completions = reuse ? copy(s:last_completions) : s:GetCompletions(a:filetype, a:base, ft_options)
     " TLogVAR 1, localtime(), len(completions)
     if !empty(a:base)
-        let lbase = len(a:base)
-        let rx = s:GetVFilter(a:filetype, a:base)
-        let completions = filter(completions, 'len(v:val) > lbase && v:val =~ rx')
+        if reuse
+            let rx = s:GetVFilter(a:filetype, a:base)
+            let completions = s:GoodCompletions(a:base, rx, completions)
+        endif
         " TLogVAR 2, localtime(), len(completions)
         let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
         " TLogVAR 3, localtime(), len(completions)
@@ -972,13 +973,13 @@ function! s:Readfile(filename) "{{{3
         let fdef = s:read_files[a:filename]
         let mtime1 = getftime(a:filename)
         if mtime1 == fdef.mtime
-            return fdef.lines
+            return copy(fdef.lines)
         endif
     endif
     let mtime = getftime(a:filename)
     let lines = readfile(a:filename)
     " TLogVAR mtime, len(lines)
-    let s:read_files[a:filename] = {'mtime': mtime, 'lines': lines}
+    let s:read_files[a:filename] = {'mtime': mtime, 'lines': copy(lines)}
     return lines
 endf
 
@@ -987,6 +988,7 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
     let completions = []
     let completefn = ''
     let wordlist_filename = s:WordListFilename(a:filetype)
+    let rx = s:GetVFilter(a:filetype, a:base)
     for source in a:ft_options.Get('sources')
         " TLogVAR localtime(), source
         if source[0:0] == '?'
@@ -998,14 +1000,14 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
         endif
         if source == 'likelycomplete'
             if filereadable(wordlist_filename)
-                let completions += s:Readfile(wordlist_filename)
+                let completions += s:GoodCompletions(a:base, rx, s:Readfile(wordlist_filename))
             endif
         elseif source == 'omnifunc'
             if exists('+omnifunc')
                 let completefn = &l:omnifunc
             endif
         elseif source == 'words'
-            let completions += tlib#list#Uniq(s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', a:ft_options), '', 1)
+            let completions += s:GoodCompletions(a:base, rx, s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', a:ft_options))
         elseif source == 'complete'
             if exists('b:likelycomplete_completefunc')
                 let completefn = b:likelycomplete_completefunc
@@ -1014,17 +1016,17 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
             let dicts = a:ft_options.Get('dictionaries')
             for [spelllang, dict] in items(dicts)
                 if filereadable(dict) && dict != wordlist_filename
-                    let completions += s:Readfile(dict)
+                    let completions += s:GoodCompletions(a:base, rx, s:Readfile(dict))
                 endif
             endfor
         elseif source == 'dictionary'
             for dict in split(&dictionary, ',')
                 if filereadable(dict) && dict != wordlist_filename
-                    let completions += s:Readfile(dict)
+                    let completions += s:GoodCompletions(a:base, rx, s:Readfile(dict))
                 endif
             endfor
         elseif source == 'files'
-            let completions += glob('*')
+            let completions += s:GoodCompletions(a:base, rx, glob('*'))
         elseif source =~# 'g:'
             if exists(source) && !empty(source)
                 exec 'let varval =' source
@@ -1037,18 +1039,18 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
                 else
                     throw 'LikelyComplete: Unsupported type for var '. source
                 endif
-                let completions += words
+                let completions += s:GoodCompletions(a:base, rx, words)
                 unlet varval
             endif
         elseif exists('*'. source)
-            let completions += call(source, [a:filetype, a:base, a:ft_options])
+            let completions += s:GoodCompletions(a:base, rx, call(source, [a:filetype, a:base, a:ft_options]))
         else
             echohl Error
             echom 'LikelyComplete: Unsupported source:' string(source)
             echohl NONE
         endif
         if !empty(completefn)
-            let completions += call(completefn, [0, a:base])
+            let completions += s:GoodCompletions(a:base, rx, call(completefn, [0, a:base]))
             let completefn = ''
         endif
     endfor
@@ -1056,6 +1058,12 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
     let completions = tlib#list#Uniq(completions, '', 1)
     " TLogVAR 2, localtime(), len(completions)
     return completions
+endf
+
+
+function! s:GoodCompletions(base, rx, completions) "{{{3
+    let lbase = len(a:base)
+    return filter(a:completions, 'len(v:val) > lbase && v:val =~ a:rx')
 endf
 
 
