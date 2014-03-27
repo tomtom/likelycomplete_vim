@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1123
+" @Revision:    1127
 
 scriptencoding utf-8
 
@@ -1124,6 +1124,8 @@ endf
 
 function! s:AddRelevance(word, cfg) "{{{3
     " TLogVAR a:word
+    let lbase = len(a:cfg.base)
+    let lword = len(a:word)
     let worddef = get(a:cfg.data, a:word, {})
     let val = 1.0
     if !empty(worddef) && a:cfg.assess_context
@@ -1156,7 +1158,7 @@ function! s:AddRelevance(word, cfg) "{{{3
         endfor
     else
         if !a:cfg.match_beginning
-            let wordpart = strpart(a:word, 0, len(a:cfg.base))
+            let wordpart = strpart(a:word, 0, lbase)
             if wordpart ==# a:cfg.base
                 let val = val * 10
             elseif (&ignorecase || &smartcase) && wordpart ==? a:cfg.base
@@ -1169,7 +1171,9 @@ function! s:AddRelevance(word, cfg) "{{{3
             let val = val * 2
         endif
     endif
-    let val = val * (1 + len(a:cfg.base) / len(a:word))
+    if lword > 0 && lbase > 0
+        let val = val * lbase / lword
+    endif
     return [val, a:word]
 endf
 
