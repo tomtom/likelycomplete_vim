@@ -77,16 +77,19 @@ if !exists('g:likelycomplete#sources')
     "
     "   likelycomplete .. Include information gathered by 
     "                   the LikelyComplete plugin
+    "   completefunc .. Include results from 'completefunc'
     "   omnifunc ...... Include results from 'omnifunc' -- please be 
-    "                   aware that some omnifunc take their time (at 
-    "                   least on first invocation).
+    "                   aware that some implementations for omnifunc 
+    "                   take their time (at least on first invocation).
     "   words ......... Include the current buffer's keywords
-    "   complete ...... Include results from 'complete'
     "   dictionaries .. Use dictionary files as defined in 
     "                   |g:likelycomplete#dictionaries|
     "   dictionary .... Use dictionary files as defined in 
     "                   'dictionary'
+    "   tags .......... Tags as returned by |taglist()|
     "   g:{VAR} ....... A global variable
+    "   b:{VAR} ....... A buffer-local variable
+    "   w:{VAR} ....... A window-local variable
     "   FUNCTION ...... A function that takes as arguments the filetype, 
     "                   the base, a dictionary of filetype-specific 
     "                   options and returns a list of possible 
@@ -99,7 +102,7 @@ if !exists('g:likelycomplete#sources')
     "
     " This is only used in conjunction with |:Likelycompletemapselect| 
     " and |:Likelycompletemapcompletefunc|.
-    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries']   "{{{2
+    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries', 'tags']   "{{{2
 endif
 
 
@@ -1008,9 +1011,11 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
             endif
         elseif source == 'words'
             let completions += s:GoodCompletions(a:base, rx, s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', a:ft_options))
-        elseif source == 'complete'
+        elseif source == 'completefunc'
             if exists('b:likelycomplete_completefunc')
                 let completefn = b:likelycomplete_completefunc
+            elseif exists('+completefunc') && &l:completefunc != 'likelycomplete#Complete'
+                let completefn = &l:completefunc
             endif
         elseif source == 'dictionaries'
             let dicts = a:ft_options.Get('dictionaries')
@@ -1025,9 +1030,11 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
                     let completions += s:GoodCompletions(a:base, rx, s:Readfile(dict))
                 endif
             endfor
+        elseif source == 'tags'
+            let completions += s:GoodCompletions(a:base, '', map(taglist(rx), 'v:val.name'))
         elseif source == 'files'
             let completions += s:GoodCompletions(a:base, rx, glob('*'))
-        elseif source =~# 'g:'
+        elseif source =~# '^[gbw]:'
             if exists(source) && !empty(source)
                 exec 'let varval =' source
                 if type(varval) == 1
@@ -1062,8 +1069,15 @@ endf
 
 
 function! s:GoodCompletions(base, rx, completions) "{{{3
+    if empty(a:base)
+        return a:completions
+    endif
     let lbase = len(a:base)
-    return filter(a:completions, 'len(v:val) > lbase && v:val =~ a:rx')
+    if empty(a:rx)
+        return filter(a:completions, 'len(v:val) > lbase')
+    else
+        return filter(a:completions, 'len(v:val) > lbase && v:val =~ a:rx')
+    endif
 endf
 
 

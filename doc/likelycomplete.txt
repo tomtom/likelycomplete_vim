@@ -101,6 +101,7 @@ Contents~
         g:likelycomplete#word_minlength ....... |g:likelycomplete#word_minlength|
         g:likelycomplete#once_per_file ........ |g:likelycomplete#once_per_file|
         g:likelycomplete#assess_context ....... |g:likelycomplete#assess_context|
+        g:likelycomplete#context_lines ........ |g:likelycomplete#context_lines|
         g:likelycomplete#base ................. |g:likelycomplete#base|
         g:likelycomplete#max .................. |g:likelycomplete#max|
         g:likelycomplete#base_context ......... |g:likelycomplete#base_context|
@@ -249,7 +250,7 @@ g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 
     true or |:Likelycompletemapcompletefunc| to be called.
 
                                                     *g:likelycomplete#sources*
-g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries'])
+g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries', 'tags'])
     A list of sources that will be used for compiling the list of 
     possible completions.
 
@@ -257,16 +258,19 @@ g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionari
 
       likelycomplete .. Include information gathered by 
                       the LikelyComplete plugin
+      completefunc .. Include results from 'completefunc'
       omnifunc ...... Include results from 'omnifunc' -- please be 
-                      aware that some omnifunc take their time (at 
-                      least on first invocation).
+                      aware that some implementations for omnifunc 
+                      take their time (at least on first invocation).
       words ......... Include the current buffer's keywords
-      complete ...... Include results from 'complete'
       dictionaries .. Use dictionary files as defined in 
                       |g:likelycomplete#dictionaries|
       dictionary .... Use dictionary files as defined in 
                       'dictionary'
+      tags .......... Tags as returned by |taglist()|
       g:{VAR} ....... A global variable
+      b:{VAR} ....... A buffer-local variable
+      w:{VAR} ....... A window-local variable
       FUNCTION ...... A function that takes as arguments the filetype, 
                       the base, a dictionary of filetype-specific 
                       options and returns a list of possible 
@@ -355,6 +359,11 @@ g:likelycomplete#assess_context (default: g:likelycomplete#experimental >= 1 && 
     CAUTION: This may cause a slow-down and increased memory use. This 
     option only works properly if |g:likelycomplete#once_per_file| 
     evaluates to false.
+
+                                                    *g:likelycomplete#context_lines*
+g:likelycomplete#context_lines (default: 2)
+    When assessing a word in context also include the previous N 
+    lines.
 
                                                     *g:likelycomplete#base*
 g:likelycomplete#base          (default: 50)
