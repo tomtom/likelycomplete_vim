@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1147
+" @Revision:    1183
 
 scriptencoding utf-8
 
@@ -239,6 +239,13 @@ if !exists('g:likelycomplete#assess_context')
     " option only works properly if |g:likelycomplete#once_per_file| 
     " evaluates to false.
     let g:likelycomplete#assess_context = g:likelycomplete#experimental >= 1 && !g:likelycomplete#once_per_file ? 5 : 0   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#context_lines')
+    " When assessing a word in context also include the previous N 
+    " lines.
+    let g:likelycomplete#context_lines = 2   "{{{2
 endif
 
 
@@ -646,6 +653,8 @@ function! s:GetBufferWords(bufnr, filetype, filename, ft_options) "{{{3
     " TLogVAR a:bufnr, a:filetype, a:filename, a:ft_options, bufnr('%')
     if bufnr('%') == a:bufnr
         let lines = getline(1, line('$'))
+    elseif bufloaded(a:bufnr) && exists('*getbufline')
+        let lines = getbufline(a:bufnr, 1, '$')
     elseif filereadable(a:filename)
         let lines = readfile(a:filename)
     else
@@ -1125,13 +1134,22 @@ function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words) "{{{3
     " TLogVAR a:filetype, a:base
     let line = getline('.')[0 : col('.') - 1]
     let line = substitute(line, '\(^\s\+\|\s\+$\)', '', 'g')
+    let context_lines = [line]
+    if g:likelycomplete#context_lines > 0 && line('.') > 1 && exists('*getbufline')
+        let lend = prevnonblank(line('.'))
+        if lend > 0
+            let lbeg = max([1, lend - g:likelycomplete#context_lines + 1])
+            let context_lines = getbufline('.', lbeg, lend) + context_lines
+            " TLogVAR context_lines
+        endif
+    endif
     let use_fuzzy = a:ft_options.Get('use_fuzzy_matches')
     let cfg = {
                 \ 'base': a:base,
                 \ 'base_rx': escape(a:base, '\'),
                 \ 'bbase_rx': '\V\^'. escape(a:base, '\'),
                 \ 'base_parts': use_fuzzy ? items(s:GetWordParts(a:ft_options, a:base)) : [],
-                \ 'words': s:Tokenize(a:ft_options, line),
+                \ 'words': s:Tokenize(a:ft_options, join(context_lines)),
                 \ 'match_beginning': a:ft_options.Get('match_beginning'),
                 \ 'use_fuzzy': use_fuzzy,
                 \ 'assess_context': a:ft_options.Get('assess_context'),
