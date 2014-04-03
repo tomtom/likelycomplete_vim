@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1183
+" @Revision:    1194
 
 scriptencoding utf-8
 
@@ -183,33 +183,6 @@ if !exists('g:likelycomplete#options')
 endif
 
 
-if !exists('g:likelycomplete#options_javascript')
-    " Some custom options for javascript (see 
-    " |g:likelycomplete#options|).
-    " :read: let g:likelycomplete#options_javascript = {...}   "{{{2
-    let g:likelycomplete#options_javascript = {
-                \ 'exclude_lines_rx': '^\s*//',
-                \ 'cms_rx': '\(/*%s*/\|\^\s\*//%s\)',
-                \ }
-endif
-
-
-if !exists('g:likelycomplete#options_vim')
-    " Some custom options for the vim filetype (see 
-    " |g:likelycomplete#options|).
-    " Anything following a single or double quote is removed. This will 
-    " make sure that all strings an comments are removed -- at the cost 
-    " of also removing eligible identifiers following a string.
-    " :read: let g:likelycomplete#options_vim = {...}   "{{{2
-    let g:likelycomplete#options_vim = {
-                \ 'exclude_lines_rx': '^\s*"',
-                \ 'strip_strings': 1,
-                \ 'strip_multiline_strings': 0,
-                \ 'strip_comments': 1,
-                \ }
-endif
-
-
 if !exists('g:likelycomplete#maxsize')
     " The maximum number of words kept per filetype.
     let g:likelycomplete#maxsize = 5000   "{{{2
@@ -328,8 +301,9 @@ endf
 function! s:FtOptions(filetype) "{{{3
     let ft_options = get(s:likelycomplete_data.ft_options, a:filetype, {})
     call extend(ft_options, g:likelycomplete#options)
-    if exists('g:likelycomplete#options_'. a:filetype)
-        call extend(ft_options, g:likelycomplete#options_{a:filetype})
+    " TLogVAR exists('g:likelycomplete#ft#'. a:filetype .'#options')
+    if exists('g:likelycomplete#ft#'. a:filetype .'#options')
+        call extend(ft_options, g:likelycomplete#ft#{a:filetype}#options)
     endif
     let ft_options.Get = function('s:Option')
     return ft_options
@@ -496,6 +470,12 @@ function! s:EnsureFiletype(...) "{{{3
     let filetype = a:0 >= 1 ? a:1 : s:GetFiletype()
     let options  = a:0 >= 2 ? a:2 : {}
     " TLogVAR filetype, options
+    if !has_key(s:setup, filetype)
+        try
+            call likelycomplete#ft#{filetype}#Init()
+        catch /^Vim\%((\a\+)\)\=:E117/
+        endtry
+    endif
     if !has_key(s:likelycomplete_data.ft, filetype)
         call s:SetData(filetype, {})
         call s:SetFiletypeOptions(filetype, options)
