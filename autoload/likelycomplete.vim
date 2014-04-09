@@ -260,17 +260,29 @@ if !exists('g:likelycomplete#max_context')
 endif
 
 
-if !exists('g:likelycomplete#run_async')
-    " How to run |g:likelycomplete#prgname|.
-    let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! ( %s >/dev/null ) &'   "{{{2
-endif
-
-
 if !exists('g:likelycomplete#prgname')
     " Non-empty use this program to asynchronously update word lists.
     " It's preferable to use vim instead of gvim. You should make sure 
     " though that your version of vim has |+clientserver| support.
-    let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (executable('vim') ? 'vim' : v:progname) : ''  "{{{2
+    let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (!has('win16') && !has('win32') && !has('win64') && executable('vim') ? 'vim' : v:progname) : ''  "{{{2
+endif
+
+
+if !exists('g:likelycomplete#run_async')
+    " How to run |g:likelycomplete#prgname|.
+    let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? (g:likelycomplete#prgname =~ '\c\<gvim\>' ? '!start %s >NUL' : '!start /min cmd /c %s >NUL') : '! ( %s >/dev/null ) &'   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#prg_init_exec')
+    " An |:exec| command that is run after starting 
+    " |g:likelycomplete#prgname|.
+    let g:likelycomplete#prg_init_exec = 'set lines=10 ch=5 co='. &co  "{{{2
+endif
+
+
+if !exists('g:likelycomplete#max_wait')
+    let g:likelycomplete#max_wait = 5000   "{{{2
 endif
 
 
@@ -312,12 +324,12 @@ function! s:FtOptions(filetype) "{{{3
     if exists('g:likelycomplete#ft#'. a:filetype .'#options')
         call extend(ft_options, g:likelycomplete#ft#{a:filetype}#options)
     endif
-    let ft_options.Get = function('s:Option')
+    let ft_options.Get = function('likelycomplete#GetOption')
     return ft_options
 endf
 
 
-function! s:Option(name, ...) dict "{{{3
+function! likelycomplete#GetOption(name, ...) dict "{{{3
     return get(self, a:name, a:0 >= 1 ? a:1 : g:likelycomplete#{a:name})
 endf
 
@@ -584,20 +596,133 @@ endf
 
 function! likelycomplete#AsyncUpdateWordList(servername, filetype, filename) "{{{3
     let filetype = s:ValidFiletype(a:filetype)
+    " set verbosefile=$HOME/tmp/lc.log
+    " set verbose=12
+    try
+        call s:UpdateWordListNow(-1, filetype, a:filename)
+        if s:ServerExists(a:servername)
+            call remote_send(a:servername, ':call likelycomplete#LoadData()<CR>')
+        endif
+    catch
+        echohl Error
+        echom v:exception
+        echohl NONE
+    endtry
+endf
+
+
+function! s:ServerExists(servername) "{{{3
+    let servers = split(serverlist(), '\n')
+    let rv = index(servers, a:servername) != -1
+    " TLogVAR rv
+    return rv
+endf
+
+
+function! likelycomplete#EnsureServer(allow_start_server) "{{{3
+    " let servername = '_LIKELYCOMPLETE_'. v:servername
+    let servername = '_LIKELYCOMPLETE_'
+    if servername == v:servername
+        let servername = ''
+    elseif !s:ServerExists(servername)
+        if a:allow_start_server
+            let cmd = printf('%s -n --servername %s -c "call likelycomplete#InitServer(%s)"',
+                        \ g:likelycomplete#prgname,
+                        \ servername,
+                        \ string(v:servername))
+            echo 'LikelyComplete: Starting server' servername '...'
+            call s:Run(cmd)
+            let s:handshake = 0
+            let msecs = 0
+            let step = 500
+            while msecs < g:likelycomplete#max_wait && !s:handshake
+                let msecs += step
+                exec 'sleep' step .'m'
+            endwh
+            " TLogVAR msecs
+            " echom "DBG" s:handshake
+            if s:handshake
+                echo
+            else
+                let servername = ''
+                echohl WarningMsg
+                echom 'LikelyComplete: Timeout when starting server:' servername
+                echom 'LikelyComplete: Please check the value of g:likelycomplete#prgname:' g:likelycomplete#prgname
+                echohl NONE
+            endif
+            unlet! s:handshake
+        else
+            let servername = ''
+        endif
+    endif
+    if !empty(servername)
+        if remote_expr(servername, 'likelycomplete#RegisterClient('. string(v:servername) .')')
+            exec 'au LikelyComplete VimLeave * call s:StopServer('. string(servername) .')'
+        endif
+    endif
+    " TLogVAR servername
+    return servername
+endf
+
+
+function! likelycomplete#Handshake(servername) "{{{3
+    " TLogVAR a:servername
+    let s:handshake = 1
+    return s:handshake
+endf
+
+
+function! s:StopServer(servername) "{{{3
+    " TLogVAR a:servername
+    if s:ServerExists(a:servername)
+        call remote_send(a:servername, ':call likelycomplete#ExitServer('. string(v:servername) .')<CR>')
+    endif
+endf
+
+
+function! likelycomplete#InitServer(servername) "{{{3
+    " TLogVAR a:servername
     if has('gui_running')
         suspend
     endif
-    " set verbosefile=$HOME/tmp/lc.log
-    " set verbose=12
-    call s:UpdateWordListNow(-1, filetype, a:filename)
-    let servers = split(serverlist(), '\n')
-    if index(servers, a:servername) != -1
-        let cmd = printf('%s --servername %s --remote-expr "likelycomplete#LoadData()"',
-                    \ g:likelycomplete#prgname,
-                    \ a:servername)
-        call s:Run(cmd)
+    if s:ServerExists(a:servername)
+        exec g:likelycomplete#prg_init_exec
+        call append(0, [
+                    \ 'This instance of '. v:progname .' is managed by LikelyComplete.',
+                    \ 'Please don''t use it for editing files.',
+                    \ 'You can close it if you want to.',
+                    \ ])
+        0
+        setlocal nomodified
+        let expr = 'likelycomplete#Handshake('. string(v:servername) .')'
+        " TLogVAR expr
+        call remote_expr(a:servername, expr)
+    else
+        qall!
     endif
-    qall!
+endf
+
+
+let s:clients = {}
+
+function! likelycomplete#RegisterClient(clientname) "{{{3
+    let is_new_client = !has_key(s:clients, a:clientname)
+    if is_new_client
+        let s:clients[a:clientname] = 1
+    endif
+    return is_new_client
+endf
+
+
+function! likelycomplete#ExitServer(clientname) "{{{3
+    " TLogVAR v:servername, a:clientname
+    " echom "DBG 1" string(keys(s:clients))
+    let servers = split(serverlist(), '\n')
+    let s:clients = filter(s:clients, 'v:key != a:clientname || index(servers, v:key) != -1')
+    " echom "DBG 2" string(keys(s:clients))
+    if empty(s:clients)
+        qall!
+    endif
 endf
 
 
@@ -614,7 +739,7 @@ endf
 
 let s:sfile = expand('<sfile>:p')
 
-function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
+function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
     let ft_options = s:FtOptions(a:filetype)
     if index(ft_options.Get('sources'), 'likelycomplete') == -1
         return
@@ -622,17 +747,22 @@ function! s:UpdateWordList(bufnr, filetype, filename) "{{{3
     if empty(g:likelycomplete#prgname) || empty(g:likelycomplete#run_async) || s:sfile == fnamemodify(a:filename, ':p')
         call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
     else
-        if getbufvar(a:bufnr, 'likelycomplete_done', 0)
-            return
+        let servername = likelycomplete#EnsureServer(a:allow_start_server)
+        " TLogVAR servername
+        if empty(servername)
+            call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
+        else
+            if getbufvar(a:bufnr, 'likelycomplete_done', 0)
+                return
+            endif
+            let expr = printf(':call likelycomplete#AsyncUpdateWordList(%s, %s, %s)<CR>',
+                        \ string(v:servername),
+                        \ string(a:filetype),
+                        \ string(fnameescape(a:filename)))
+            " TLogVAR expr
+            call remote_send(servername, expr)
+            call setbufvar(a:bufnr, 'likelycomplete_done', 1)
         endif
-        let cmd = printf('%s -R -n -c "call likelycomplete#AsyncUpdateWordList(%s, %s, %s)"',
-                    \ g:likelycomplete#prgname,
-                    \ string(v:servername),
-                    \ string(a:filetype),
-                    \ string(fnameescape(a:filename)))
-        " \ g:likelycomplete#prgname =~ '\<gvim\>' ? '-c suspend' : '',
-        call s:Run(cmd)
-        call setbufvar(a:bufnr, 'likelycomplete_done', 1)
     endif
 endf
 
@@ -704,10 +834,14 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
         for word in words
             if has_key(data, word)
                 let worddef = data[word]
-                if worddef.obs < g:likelycomplete#max
-                    let worddef.obs += 1
-                elseif worddef.n > 1
-                    let worddef.n -= 1
+                let obs = get(worddef, 'obs', g:likelycomplete#base)
+                if obs < g:likelycomplete#max
+                    let worddef.obs = obs + 1
+                else
+                    let n = get(worddef, 'n', g:likelycomplete#base)
+                    if n > 1
+                        let worddef.n = n - 1
+                    endif
                 endif
             else
                 let worddef = {'obs': g:likelycomplete#base, 'n': g:likelycomplete#base}
@@ -728,10 +862,15 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
             endfor
         endif
         for word in filter(keys(data), '!has_key(wordds, v:val)')
-            if data[word].n < g:likelycomplete#max
-                let data[word].n += 1
-            elseif data[word].obs > 1
-                let data[word].obs -= 1
+            let worddef = data[word]
+            let n = get(worddef, 'n', g:likelycomplete#base)
+            if n < g:likelycomplete#max
+                let data[word].n = n + 1
+            else
+                let obs = get(worddef, 'obs', g:likelycomplete#base)
+                if obs > 1
+                    let data[word].obs = obs - 1
+                endif
             endif
         endfor
         call s:SetData(a:filetype, data)
@@ -778,7 +917,7 @@ function! s:WriteWordList(filetype) "{{{3
     if !empty(data)
         let ft_options = s:FtOptions(a:filetype)
         let maxsize = ft_options.Get('maxsize')
-        let words = values(map(copy(data), '[(0.0 + v:val.obs) / v:val.n, v:key]'))
+        let words = values(map(copy(data), '[(0.0 + get(v:val, "obs", 0)) / get(v:val, "n", 1), v:key]'))
         let words = sort(words)
         let words = map(words, 'v:val[1]')
         let words = reverse(words)
