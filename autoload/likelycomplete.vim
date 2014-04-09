@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1194
+" @Revision:    1359
 
 scriptencoding utf-8
 
@@ -133,6 +133,12 @@ if !exists('g:likelycomplete#use_fuzzy_matches')
 endif
 
 
+if !exists('g:likelycomplete#use_completedone')
+    " If true, add weights for the selected word.
+    let g:likelycomplete#use_completedone = 1   "{{{2
+endif
+
+
 if !exists('g:likelycomplete#list_picker')
     " VIM plugin developers can add support for "list pickers" other 
     " than tlib by defining the following functions:
@@ -174,6 +180,7 @@ if !exists('g:likelycomplete#options')
     "   set_completefunc ... Override |g:likelycomplete#set_completefunc|
     "   auto_complete ...... Override |g:likelycomplete#auto_complete|
     "   use_fuzzy_matches .. Override |g:likelycomplete#use_fuzzy_matches|
+    "   use_completedone ... Override |g:likelycomplete#use_completedone|
     "   match_beginning .... Override |g:likelycomplete#match_beginning|
     "   maxsize ............ Override |g:likelycomplete#maxsize|
     "   once_per_file ...... Override |g:likelycomplete#once_per_file|
@@ -915,10 +922,62 @@ function! likelycomplete#Complete(findstart, base) "{{{3
         if len(rv) <= 1
             let s:last_failed = getpos('.')
         endif
+        let ft_options = s:FtOptions(&filetype)
+        if ft_options.Get('use_completedone')
+            autocmd LikelyComplete CompleteDone <buffer> call s:CompleteDone()
+        endif
         return rv
     else
         let s:last_failed = getpos('.')
         return []
+    endif
+endf
+
+
+function! s:CompleteDone() "{{{3
+    autocmd! LikelyComplete CompleteDone
+    let start = likelycomplete#Complete(1, '')
+    " TLogVAR start
+    if start >= 0
+        let line = getline('.')
+        let col0 = col('.') - 1
+        let word = line[start : col0]
+        " TLogVAR word
+        let filetype = s:GetFiletype()
+        let data = s:GetData(filetype)
+        if has_key(data, word)
+            let worddef = get(data, word, {})
+            " TLogVAR worddef
+            let ft_options = s:FtOptions(filetype)
+            if !has_key(worddef, 'n')
+                let worddef.n = g:likelycomplete#base
+            endif
+            if !has_key(worddef, 'obs')
+                let worddef.obs = g:likelycomplete#base
+            endif
+            if worddef.obs < g:likelycomplete#max
+                let worddef.obs += 1
+            elseif worddef.n > 1
+                let worddef.n -= 1
+            endif
+            if start > 0
+                if !ft_options.Get('once_per_file')
+                    if ft_options.Get('assess_context') > 0
+                        let preline = line[0 : start - 1]
+                        if preline =~ '\S'
+                            let context_words = s:Tokenize(ft_options, line[start : col0])
+                            if !empty(context_words)
+                                let worddef.context = s:AssessContext(word, get(worddef, 'context', {}), context_words)
+                            endif
+                        endif
+                    endif
+                endif
+            endif
+            " TLogVAR worddef
+            let data[word] = worddef
+            call s:SetData(filetype, data)
+            call s:SaveData()
+        endif
     endif
 endf
 
