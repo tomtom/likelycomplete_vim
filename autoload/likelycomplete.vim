@@ -355,8 +355,9 @@ function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
     "     echom "LikelyComplete: No update when using w:likelycomplete_filetype"
     "     echohl NONE
     " else
-        exec 'autocmd! LikelyComplete BufDelete <buffer='. a:bufnr .'>'
-        exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(filetype) .','. string(expand('%:p')) .')'
+        exec 'autocmd! LikelyComplete BufDelete,VimLeavePre <buffer='. a:bufnr .'>'
+        exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(filetype) .','. string(expand('%:p')) .', 1)'
+        exec 'autocmd LikelyComplete VimLeavePre <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(filetype) .','. string(expand('%:p')) .', 0)'
     " endif
 endf
 
