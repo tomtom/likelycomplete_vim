@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1483
+" @Revision:    1485
 
 scriptencoding utf-8
 
@@ -743,7 +743,7 @@ function! likelycomplete#ExitServer(clientname) "{{{3
     " echom "DBG 1" string(keys(s:clients))
     let servers = split(serverlist(), '\n')
     let s:clients = filter(s:clients, 'v:key != a:clientname && index(servers, v:key) != -1')
-    echom "DBG 2" string(keys(s:clients))
+    " echom "DBG 2" string(keys(s:clients))
     if empty(s:clients)
         qall!
     endif
@@ -826,6 +826,7 @@ function! s:ScanBufferWords(bufnr, filetype, filename, ft_options) "{{{3
     let exclude_lines_rx = a:ft_options.Get('exclude_lines_rx', '')
     let strip_numbers = a:ft_options.Get('strip_numbers', 1)
     " TLogVAR ignore_syntax_rx
+    let pos = getpos('.')
     while search('\k\+', 'Wc')
         if getline('.') =~ exclude_lines_rx
             norm! +
@@ -847,6 +848,11 @@ function! s:ScanBufferWords(bufnr, filetype, filename, ft_options) "{{{3
             endif
             norm! W
         endif
+        let pos1 = getpos('.')
+        if pos == pos1
+            break
+        endif
+        let pos = pos1
     endwh
     exec 'bdelete!' fnameescape(a:filename)
     return {'words': words, 'syntax': syntax}
