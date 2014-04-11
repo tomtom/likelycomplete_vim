@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1359
+" @Revision:    1483
 
 scriptencoding utf-8
 
@@ -181,6 +181,8 @@ if !exists('g:likelycomplete#options')
     "   auto_complete ...... Override |g:likelycomplete#auto_complete|
     "   use_fuzzy_matches .. Override |g:likelycomplete#use_fuzzy_matches|
     "   use_completedone ... Override |g:likelycomplete#use_completedone|
+    "   use_syntax ......... Override |g:likelycomplete#use_syntax|
+    "   ignore_syntax_rx ... Override |g:likelycomplete#ignore_syntax_rx|
     "   match_beginning .... Override |g:likelycomplete#match_beginning|
     "   maxsize ............ Override |g:likelycomplete#maxsize|
     "   once_per_file ...... Override |g:likelycomplete#once_per_file|
@@ -283,6 +285,28 @@ endif
 
 if !exists('g:likelycomplete#max_wait')
     let g:likelycomplete#max_wait = 5000   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#use_syntax')
+    " If > 0, use information about syntax groups for ranking 
+    " completions.
+    "
+    " If 1, use |synIDtrans()|. If 2, use |synID()|.
+    "
+    " CAUTION: This doesn't work yet reliably. The quality of results 
+    " depends on the quality of the vim syntax file for a given 
+    " filetype.
+    "
+    " NOTE: Since this is time-consuming, it is required to enable async 
+    " updates via |g:likelycomplete#prgname| and 
+    " |g:likelycomplete#run_async|.
+    let g:likelycomplete#use_syntax = g:likelycomplete#experimental >= 2 && !empty(g:likelycomplete#run_async) && !empty(g:likelycomplete#prgname)   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#ignore_syntax_rx')
+    let g:likelycomplete#ignore_syntax_rx = '\%(Comment\|NonText\|String\)'   "{{{2
 endif
 
 
@@ -767,6 +791,68 @@ function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
 endf
 
 
+function! s:GetEnrichedBufferWords(bufnr, filetype, filename, ft_options) "{{{3
+    if a:bufnr == -1 && a:ft_options.Get('use_syntax')
+        " let rv = s:ScanBufferWords(a:bufnr, a:filetype, a:filename, a:ft_options)
+        return s:ScanBufferWords(a:bufnr, a:filetype, a:filename, a:ft_options)
+        " return {'words': s:GetBufferWords(a:bufnr, a:filetype, a:filename, a:ft_options)}
+    else
+        return {'words': s:GetBufferWords(a:bufnr, a:filetype, a:filename, a:ft_options)}
+    endif
+endf
+
+
+function! s:GetSyn(ft_options, lnum, col) "{{{3
+    " TLogVAR bufnr('%'), a:lnum, a:col
+    " echom "DBG" string(getline(a:lnum))
+    let synid = synID(a:lnum, a:col, 1)
+    if a:ft_options.Get('use_syntax') == 1
+        let synid = synIDtrans(synid)
+    endif
+    let syn = synIDattr(synid, 'name')
+    " TLogVAR syn, synid
+    return syn
+endf
+
+
+function! s:ScanBufferWords(bufnr, filetype, filename, ft_options) "{{{3
+    " TLogVAR a:bufnr, a:filename
+    exec 'split' fnameescape(a:filename)
+    norm! gg^
+    let words = []
+    let syntax = {}
+    let ignore_syntax_rx = a:ft_options.Get('ignore_syntax_rx')
+    let word_minlength = a:ft_options.Get('word_minlength')
+    let exclude_lines_rx = a:ft_options.Get('exclude_lines_rx', '')
+    let strip_numbers = a:ft_options.Get('strip_numbers', 1)
+    " TLogVAR ignore_syntax_rx
+    while search('\k\+', 'Wc')
+        if getline('.') =~ exclude_lines_rx
+            norm! +
+        else
+            let word = expand('<cword>')
+            if strwidth(word) >= word_minlength &&
+                        \ !(strip_numbers && word =~ '^-\?\d\+\(\.\d\+\)\?$')
+                let syn = s:GetSyn(a:ft_options, line('.'), col('.'))
+                if syn !~ ignore_syntax_rx
+                    " TLogVAR word, syn
+                    call add(words, word)
+                    if !empty(syn)
+                        if !has_key(syntax, word)
+                            let syntax[word] = {}
+                        endif
+                        let syntax[word][syn] = 1
+                    endif
+                endif
+            endif
+            norm! W
+        endif
+    endwh
+    exec 'bdelete!' fnameescape(a:filename)
+    return {'words': words, 'syntax': syntax}
+endf
+
+
 function! s:GetBufferWords(bufnr, filetype, filename, ft_options) "{{{3
     " TLogVAR a:bufnr, a:filetype, a:filename, a:ft_options, bufnr('%')
     if bufnr('%') == a:bufnr
@@ -817,7 +903,8 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
         echo 'LikelyComplete: Updating' a:filetype 'word list'
     endif
     let ft_options = s:FtOptions(a:filetype)
-    let words = s:GetBufferWords(a:bufnr, a:filetype, a:filename, ft_options)
+    let enriched_words = s:GetEnrichedBufferWords(a:bufnr, a:filetype, a:filename, ft_options)
+    let words = enriched_words.words
     let data = s:GetData(a:filetype)
     if !empty(words)
         let wordds = {}
@@ -848,6 +935,11 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
             endif
             let data[word] = worddef
         endfor
+        if has_key(enriched_words, 'syntax')
+            for [word, syns] in items(enriched_words.syntax)
+                let data[word].syntax = extend(get(data[word], 'syntax', {}), syns)
+            endfor
+        endif
         if assess_context > 0
             let context_words = []
             let iword = 0
@@ -989,7 +1081,9 @@ endf
 
 function! likelycomplete#SelectWord(base) "{{{3
     let filetype = s:GetFiletype()
-    let words = s:GetSortedCompletions(filetype, a:base, 0)
+    let ft_options = s:FtOptions(filetype)
+    let syn = s:GetSyn(ft_options, line('.'), s:Col())
+    let words = s:GetSortedCompletions(filetype, a:base, 0, syn)
     let fbase = g:likelycomplete#list_set_filter ? a:base : ''
     let word = likelycomplete#ListPicker_{g:likelycomplete#list_picker}('s', 'Select word:', words, fbase)
     if empty(word)
@@ -1032,7 +1126,10 @@ endf
 let s:last_failed = []
 
 function! likelycomplete#Complete(findstart, base) "{{{3
+    " TLogVAR a:findstart, a:base
+    let ft_options = s:FtOptions(&filetype)
     if a:findstart
+        let s:last_syntax = ''
         let pos = getpos('.')
         let line = strpart(getline('.'), 0, col('.') - 1)
         let start = match(line, '\k\+$')
@@ -1048,11 +1145,12 @@ function! likelycomplete#Complete(findstart, base) "{{{3
             return -3
         else
             let s:last_failed = []
+            let s:last_syntax = s:GetSyn(ft_options, line('.'), col('.') - 1)
             return start
         endif
     elseif a:base =~ '\D'
         try
-            let rv = s:GetSortedCompletions(s:GetFiletype(), a:base, 1)
+            let rv = s:GetSortedCompletions(s:GetFiletype(), a:base, 1, s:last_syntax)
         catch
             echohl Error
             echom v:exception
@@ -1062,7 +1160,6 @@ function! likelycomplete#Complete(findstart, base) "{{{3
         if len(rv) <= 1
             let s:last_failed = getpos('.')
         endif
-        let ft_options = s:FtOptions(&filetype)
         if ft_options.Get('use_completedone')
             autocmd LikelyComplete CompleteDone <buffer> call s:CompleteDone()
         endif
@@ -1126,7 +1223,7 @@ let s:last_base = ''
 let s:last_filetype = ''
 let s:last_completions = []
 
-function! s:GetSortedCompletions(filetype, base, insert_base) "{{{3
+function! s:GetSortedCompletions(filetype, base, insert_base, syntax) "{{{3
     " TLogVAR 0, localtime()
     let ft_options = s:FtOptions(a:filetype)
     let reuse = s:last_filetype == a:filetype && strpart(a:base, 0, len(s:last_base)) ==# s:last_base
@@ -1139,7 +1236,8 @@ function! s:GetSortedCompletions(filetype, base, insert_base) "{{{3
             let completions = s:GoodCompletions(a:base, rx, completions)
         endif
         " TLogVAR 2, localtime(), len(completions)
-        let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions)
+        let coptions = {'syntax': a:syntax}
+        let completions = s:GetWordsSortedByRelevance(a:filetype, a:base, ft_options, completions, coptions)
         " TLogVAR 3, localtime(), len(completions)
         if a:insert_base
             let completions = insert(completions, a:base)
@@ -1198,7 +1296,7 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
                 let completefn = &l:omnifunc
             endif
         elseif source == 'words'
-            let completions += s:GoodCompletions(a:base, rx, s:GetBufferWords(bufnr('%'), s:GetFiletype(), '', a:ft_options))
+            let completions += s:GoodCompletions(a:base, rx, s:GetBufferWords(bufnr('%'), a:filetype, '', a:ft_options))
         elseif source == 'completefunc'
             if exists('b:likelycomplete_completefunc')
                 let completefn = b:likelycomplete_completefunc
@@ -1309,9 +1407,20 @@ function! s:GetWordParts(ft_options, base) "{{{3
 endf
 
 
-function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words) "{{{3
+function! s:Col() "{{{3
+    let col = col('.')
+    if mode() == 'i'
+        let col -= 1
+    endif
+    return col
+endf
+
+
+function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words, coptions) "{{{3
     " TLogVAR a:filetype, a:base
-    let line = getline('.')[0 : col('.') - 1]
+    let lnum = line('.')
+    let col = s:Col()
+    let line = getline(lnum)[0 : col]
     let line = substitute(line, '\(^\s\+\|\s\+$\)', '', 'g')
     let context_lines = [line]
     if g:likelycomplete#context_lines > 0 && line('.') > 1 && exists('*getbufline')
@@ -1331,6 +1440,8 @@ function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words) "{{{3
                 \ 'words': s:Tokenize(a:ft_options, join(context_lines)),
                 \ 'match_beginning': a:ft_options.Get('match_beginning'),
                 \ 'use_fuzzy': use_fuzzy,
+                \ 'use_syntax': a:ft_options.Get('use_syntax'),
+                \ 'syntax': get(a:coptions, 'syntax', ''),
                 \ 'assess_context': a:ft_options.Get('assess_context'),
                 \ 'data': s:GetData(a:filetype),
                 \ }
@@ -1342,7 +1453,7 @@ endf
 
 
 function! s:AddRelevance(word, cfg) "{{{3
-    " TLogVAR a:word
+    " TLogVAR a:word, a:cfg.syntax
     let lbase = len(a:cfg.base)
     let lword = len(a:word)
     let worddef = get(a:cfg.data, a:word, {})
@@ -1356,6 +1467,18 @@ function! s:AddRelevance(word, cfg) "{{{3
         if val > g:likelycomplete#max
             let val = 0.0 + g:likelycomplete#max
         endif
+    endif
+    if a:cfg.use_syntax && !empty(a:cfg.syntax)
+        let syns = keys(get(worddef, 'syntax', {}))
+        let csyn = a:cfg.syntax
+        " TLogVAR a:word, csyn, syns
+        for syn in syns
+            if syn == csyn
+                " TLogVAR a:word, csyn, syns
+                let val = val * 2
+                break
+            endif
+        endfor
     endif
     if a:cfg.use_fuzzy
         for [plens, parts_rx] in a:cfg.base_parts
