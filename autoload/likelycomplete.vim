@@ -718,8 +718,8 @@ function! likelycomplete#ExitServer(clientname) "{{{3
     " TLogVAR v:servername, a:clientname
     " echom "DBG 1" string(keys(s:clients))
     let servers = split(serverlist(), '\n')
-    let s:clients = filter(s:clients, 'v:key != a:clientname || index(servers, v:key) != -1')
-    " echom "DBG 2" string(keys(s:clients))
+    let s:clients = filter(s:clients, 'v:key != a:clientname && index(servers, v:key) != -1')
+    echom "DBG 2" string(keys(s:clients))
     if empty(s:clients)
         qall!
     endif
