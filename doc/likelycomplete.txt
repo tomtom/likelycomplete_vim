@@ -97,6 +97,7 @@ Contents~
         g:likelycomplete#dictionaries ............... |g:likelycomplete#dictionaries|
         g:likelycomplete#match_beginning ............ |g:likelycomplete#match_beginning|
         g:likelycomplete#use_fuzzy_matches .......... |g:likelycomplete#use_fuzzy_matches|
+        g:likelycomplete#use_completedone ........... |g:likelycomplete#use_completedone|
         g:likelycomplete#list_picker ................ |g:likelycomplete#list_picker|
         g:likelycomplete#data_cfile ................. |g:likelycomplete#data_cfile|
         g:likelycomplete#maxsize .................... |g:likelycomplete#maxsize|
@@ -108,10 +109,15 @@ Contents~
         g:likelycomplete#max ........................ |g:likelycomplete#max|
         g:likelycomplete#base_context ............... |g:likelycomplete#base_context|
         g:likelycomplete#max_context ................ |g:likelycomplete#max_context|
-        g:likelycomplete#run_async .................. |g:likelycomplete#run_async|
         g:likelycomplete#prgname .................... |g:likelycomplete#prgname|
+        g:likelycomplete#run_async .................. |g:likelycomplete#run_async|
+        g:likelycomplete#prg_init_exec .............. |g:likelycomplete#prg_init_exec|
+        g:likelycomplete#max_wait ................... |g:likelycomplete#max_wait|
+        g:likelycomplete#use_syntax ................. |g:likelycomplete#use_syntax|
+        g:likelycomplete#ignore_syntax_rx ........... |g:likelycomplete#ignore_syntax_rx|
         g:likelycomplete#debug ...................... |g:likelycomplete#debug|
         likelycomplete#LoadData ..................... |likelycomplete#LoadData()|
+        likelycomplete#GetOption .................... |likelycomplete#GetOption()|
         likelycomplete#String2Args .................. |likelycomplete#String2Args()|
         likelycomplete#SetupFiletype ................ |likelycomplete#SetupFiletype()|
         likelycomplete#SetupBuffer .................. |likelycomplete#SetupBuffer()|
@@ -119,6 +125,11 @@ Contents~
         i_<c-g><c-u> ................................ |i_<c-g><c-u>|
         likelycomplete#Tokenize ..................... |likelycomplete#Tokenize()|
         likelycomplete#AsyncUpdateWordList .......... |likelycomplete#AsyncUpdateWordList()|
+        likelycomplete#EnsureServer ................. |likelycomplete#EnsureServer()|
+        likelycomplete#Handshake .................... |likelycomplete#Handshake()|
+        likelycomplete#InitServer ................... |likelycomplete#InitServer()|
+        likelycomplete#RegisterClient ............... |likelycomplete#RegisterClient()|
+        likelycomplete#ExitServer ................... |likelycomplete#ExitServer()|
         likelycomplete#ListPicker_tlib .............. |likelycomplete#ListPicker_tlib()|
         likelycomplete#RemoveWords .................. |likelycomplete#RemoveWords()|
         likelycomplete#MapSelectWord ................ |likelycomplete#MapSelectWord()|
@@ -334,6 +345,10 @@ g:likelycomplete#use_fuzzy_matches (default: 1)
     If you really believe in fuzzy matching, you might want to 
     consider also setting |g:tlib#input#filter_mode| to 'fuzzy'.
 
+                                                    *g:likelycomplete#use_completedone*
+g:likelycomplete#use_completedone (default: 1)
+    If true, add weights for the selected word.
+
                                                     *g:likelycomplete#list_picker*
 g:likelycomplete#list_picker   (default: 'tlib')
     VIM plugin developers can add support for "list pickers" other 
@@ -404,21 +419,51 @@ g:likelycomplete#max_context   (default: 1000)
     NOTE: The actual max value is |g:likelycomplete#max_context| + 
     |g:likelycomplete#base_context| - 1.
 
+                                                    *g:likelycomplete#prgname*
+g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? v:progname : '')
+    Non-empty use this program to asynchronously update word lists.
+    You should make sure though that your version of vim has 
+    |+clientserver| support -- this is most likely true for the 
+    Windows or GTK Version of GVIM.
+
                                                     *g:likelycomplete#run_async*
-g:likelycomplete#run_async     (default: has('win16') || has('win32') || has('win64') ? '!start /min cmd /c %s >NUL' : '! ( %s >/dev/null ) &')
+g:likelycomplete#run_async     (default: has('win16') || has('win32') || has('win64') ? (g:likelycomplete#prgname =~ '\c\<gvim\>' ? '!start %s >NUL' : '!start /min cmd /c %s >NUL') : '! ( %s >/dev/null ) &')
     How to run |g:likelycomplete#prgname|.
 
-                                                    *g:likelycomplete#prgname*
-g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (executable('vim') ? 'vim' : v:progname) : '')
-    Non-empty use this program to asynchronously update word lists.
-    It's preferable to use vim instead of gvim. You should make sure 
-    though that your version of vim has |+clientserver| support.
+                                                    *g:likelycomplete#prg_init_exec*
+g:likelycomplete#prg_init_exec (default: 'set lines=10 ch=5 co='. &co)
+    An |:exec| command that is run after starting 
+    |g:likelycomplete#prgname|.
+
+                                                    *g:likelycomplete#max_wait*
+g:likelycomplete#max_wait      (default: 5000)
+
+                                                    *g:likelycomplete#use_syntax*
+g:likelycomplete#use_syntax    (default: g:likelycomplete#experimental >= 2 && !empty(g:likelycomplete#run_async) && !empty(g:likelycomplete#prgname))
+    If > 0, use information about syntax groups for ranking 
+    completions.
+
+    If 1, use |synIDtrans()|. If 2, use |synID()|.
+
+    CAUTION: This doesn't work yet reliably. The quality of results 
+    depends on the quality of the vim syntax file for a given 
+    filetype.
+
+    NOTE: Since this is time-consuming, it is required to enable async 
+    updates via |g:likelycomplete#prgname| and 
+    |g:likelycomplete#run_async|.
+
+                                                    *g:likelycomplete#ignore_syntax_rx*
+g:likelycomplete#ignore_syntax_rx (default: '\%(Comment\|NonText\|String\)')
 
                                                     *g:likelycomplete#debug*
 g:likelycomplete#debug         (default: 0)
 
                                                     *likelycomplete#LoadData()*
 likelycomplete#LoadData()
+
+                                                    *likelycomplete#GetOption()*
+likelycomplete#GetOption(name, ...)
 
                                                     *likelycomplete#String2Args()*
 likelycomplete#String2Args(string)
@@ -440,6 +485,21 @@ likelycomplete#Tokenize(text, ...)
 
                                                     *likelycomplete#AsyncUpdateWordList()*
 likelycomplete#AsyncUpdateWordList(servername, filetype, filename)
+
+                                                    *likelycomplete#EnsureServer()*
+likelycomplete#EnsureServer(allow_start_server)
+
+                                                    *likelycomplete#Handshake()*
+likelycomplete#Handshake(servername)
+
+                                                    *likelycomplete#InitServer()*
+likelycomplete#InitServer(servername)
+
+                                                    *likelycomplete#RegisterClient()*
+likelycomplete#RegisterClient(clientname)
+
+                                                    *likelycomplete#ExitServer()*
+likelycomplete#ExitServer(clientname)
 
                                                     *likelycomplete#ListPicker_tlib()*
 likelycomplete#ListPicker_tlib(type, prompt, list, base)

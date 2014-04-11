@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1485
+" @Revision:    1498
 
 scriptencoding utf-8
 
@@ -264,9 +264,10 @@ endif
 
 if !exists('g:likelycomplete#prgname')
     " Non-empty use this program to asynchronously update word lists.
-    " It's preferable to use vim instead of gvim. You should make sure 
-    " though that your version of vim has |+clientserver| support.
-    let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? (!has('win16') && !has('win32') && !has('win64') && executable('vim') ? 'vim' : v:progname) : ''  "{{{2
+    " You should make sure though that your version of vim has 
+    " |+clientserver| support -- this is most likely true for the 
+    " Windows or GTK Version of GVIM.
+    let g:likelycomplete#prgname = g:likelycomplete#experimental >= 2 && has('clientserver') && !empty(v:servername) ? v:progname : ''  "{{{2
 endif
 
 
@@ -625,7 +626,7 @@ function! likelycomplete#AsyncUpdateWordList(servername, filetype, filename) "{{
     try
         call s:UpdateWordListNow(-1, filetype, a:filename)
         if s:ServerExists(a:servername)
-            call remote_send(a:servername, ':call likelycomplete#LoadData()<CR>')
+            call remote_expr(a:servername, 'likelycomplete#LoadData()')
         endif
     catch
         echohl Error
@@ -1187,6 +1188,9 @@ function! s:CompleteDone() "{{{3
         let word = line[start : col0]
         " TLogVAR word
         let filetype = s:GetFiletype()
+        " if g:likelycomplete#debug && !empty(s:last_syntax) " DBG
+            " echom "DBG CompleteDone" s:last_syntax s:GetSyn(s:FtOptions(filetype), line('.'), col('.') - 1) " DBG
+        " endif " DBG
         let data = s:GetData(filetype)
         if has_key(data, word)
             let worddef = get(data, word, {})
