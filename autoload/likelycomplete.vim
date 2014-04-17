@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1498
+" @Revision:    1502
 
 scriptencoding utf-8
 
@@ -1196,29 +1196,9 @@ function! s:CompleteDone() "{{{3
             let worddef = get(data, word, {})
             " TLogVAR worddef
             let ft_options = s:FtOptions(filetype)
-            if !has_key(worddef, 'n')
-                let worddef.n = g:likelycomplete#base
-            endif
-            if !has_key(worddef, 'obs')
-                let worddef.obs = g:likelycomplete#base
-            endif
-            if worddef.obs < g:likelycomplete#max
-                let worddef.obs += 1
-            elseif worddef.n > 1
-                let worddef.n -= 1
-            endif
-            if start > 0
-                if !ft_options.Get('once_per_file')
-                    if ft_options.Get('assess_context') > 0
-                        let preline = line[0 : start - 1]
-                        if preline =~ '\S'
-                            let context_words = s:Tokenize(ft_options, line[start : col0])
-                            if !empty(context_words)
-                                let worddef.context = s:AssessContext(word, get(worddef, 'context', {}), context_words)
-                            endif
-                        endif
-                    endif
-                endif
+            let select = get(worddef, 'select', 1)
+            if select < g:likelycomplete#max
+                let worddef.select = select + 1
             endif
             " TLogVAR worddef
             let data[word] = worddef
@@ -1451,6 +1431,7 @@ function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words, coption
                 \ 'match_beginning': a:ft_options.Get('match_beginning'),
                 \ 'use_fuzzy': use_fuzzy,
                 \ 'use_syntax': a:ft_options.Get('use_syntax'),
+                \ 'use_completedone': a:ft_options.Get('use_completedone'),
                 \ 'syntax': get(a:coptions, 'syntax', ''),
                 \ 'assess_context': a:ft_options.Get('assess_context'),
                 \ 'data': s:GetData(a:filetype),
@@ -1477,6 +1458,10 @@ function! s:AddRelevance(word, cfg) "{{{3
         if val > g:likelycomplete#max
             let val = 0.0 + g:likelycomplete#max
         endif
+    endif
+    if a:cfg.use_completedone
+        let val = val * get(worddef, 'select', 1)
+        " if get(worddef, 'select', 1) > 1 | echom "DBG select" a:word get(worddef, 'select', 1) | fi " DBG
     endif
     if a:cfg.use_syntax && !empty(a:cfg.syntax)
         let syns = keys(get(worddef, 'syntax', {}))
