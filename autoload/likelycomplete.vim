@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1502
+" @Revision:    1512
 
 scriptencoding utf-8
 
@@ -81,6 +81,7 @@ if !exists('g:likelycomplete#sources')
     "   omnifunc ...... Include results from 'omnifunc' -- please be 
     "                   aware that some implementations for omnifunc 
     "                   take their time (at least on first invocation).
+    "   syntaxcomplete .. Use |syntaxcomplete#Complete|.
     "   words ......... Include the current buffer's keywords
     "   dictionaries .. Use dictionary files as defined in 
     "                   |g:likelycomplete#dictionaries|
@@ -102,7 +103,7 @@ if !exists('g:likelycomplete#sources')
     "
     " This is only used in conjunction with |:Likelycompletemapselect| 
     " and |:Likelycompletemapcompletefunc|.
-    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries', 'tags']   "{{{2
+    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries', 'tags', 'syntaxcomplete']   "{{{2
 endif
 
 
@@ -1306,6 +1307,12 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
                     let completions += s:GoodCompletions(a:base, rx, s:Readfile(dict))
                 endif
             endfor
+        elseif source == 'syntaxcomplete'
+            if v:version >= 704 || exists('*syntaxcomplete#Complete')
+                let sc_col = syntaxcomplete#Complete(1, '')
+                let completions += syntaxcomplete#Complete(0, a:base)
+                " let completions += s:GoodCompletions(a:base, rx, syntaxcomplete#Complete(0, a:base))
+            endif
         elseif source == 'tags'
             let completions += s:GoodCompletions(a:base, '', map(taglist(rx), 'v:val.name'))
         elseif source == 'files'
