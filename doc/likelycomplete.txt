@@ -290,7 +290,7 @@ g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 
     true or |:Likelycompletemapcompletefunc| to be called.
 
                                                     *g:likelycomplete#sources*
-g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries', 'tags'])
+g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries', 'tags', 'syntaxcomplete'])
     A list of sources that will be used for compiling the list of 
     possible completions.
 
@@ -302,6 +302,7 @@ g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionari
       omnifunc ...... Include results from 'omnifunc' -- please be 
                       aware that some implementations for omnifunc 
                       take their time (at least on first invocation).
+      syntaxcomplete .. Use |syntaxcomplete#Complete|.
       words ......... Include the current buffer's keywords
       dictionaries .. Use dictionary files as defined in 
                       |g:likelycomplete#dictionaries|
@@ -524,4 +525,4 @@ likelycomplete#Complete(findstart, base)
 
 
 
-vim:tw=78:fo=tcq2:isk=!-~,^*,^|,^":ts=8:ft=help:norl:
+vim:tw=78:fo=w2croql:isk=!-~,^*,^|,^":ts=8:ft=help:norl:
