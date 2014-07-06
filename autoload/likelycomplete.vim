@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1512
+" @Revision:    1513
 
 scriptencoding utf-8
 
@@ -778,7 +778,7 @@ function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
         if empty(servername)
             call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
         else
-            if getbufvar(a:bufnr, 'likelycomplete_done', 0)
+            if s:Getbufvar(a:bufnr, 'likelycomplete_done', 0)
                 return
             endif
             let expr = printf(':call likelycomplete#AsyncUpdateWordList(%s, %s, %s)<CR>',
@@ -903,8 +903,23 @@ function! s:GetBufferWords(bufnr, filetype, filename, ft_options) "{{{3
 endf
 
 
+if v:version >= 704
+    function! s:Getbufvar(bufnr, var, ...) "{{{3
+        let default = a:0 >= 1 ? a:1 : ''
+        let val = getbufvar(a:bufnr, a:var, default)
+        return val
+    endf
+else
+    function! s:Getbufvar(bufnr, var, ...) "{{{3
+        let default = a:0 >= 1 ? a:1 : ''
+        let val = getbufvar(a:bufnr, a:var)
+        return empty(val) ? default : val
+    endf
+endif
+
+
 function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
-    if a:bufnr > 0 && getbufvar(a:bufnr, 'likelycomplete_done', 0)
+    if a:bufnr > 0 && s:Getbufvar(a:bufnr, 'likelycomplete_done', 0)
         return
     endif
     if a:bufnr > 0
