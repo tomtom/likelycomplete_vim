@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1513
+" @Revision:    1516
 
 scriptencoding utf-8
 
@@ -614,8 +614,8 @@ endf
 
 function! s:RemoveStrings(ft_options, text) "{{{3
     let text = a:text
-    let text = substitute(text, '"\(\\"\|.\{-}\)\+"', ' ', 'g')
-    let text = substitute(text, '''\(''''\|\\''\|.\{-}\)\+''', ' ', 'g')
+    let text = substitute(text, '"\(\\"\|[^"]\+\)*"', ' ', 'g')
+    let text = substitute(text, '''\(''''\|\\''\|[^'']\+\)*''', ' ', 'g')
     return text
 endf
 
