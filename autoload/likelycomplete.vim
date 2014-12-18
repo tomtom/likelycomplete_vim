@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1516
+" @Revision:    1542
 
 scriptencoding utf-8
 
@@ -394,6 +394,7 @@ function! likelycomplete#SetupBuffer(filetype, bufnr) "{{{3
     "     echohl NONE
     " else
         exec 'autocmd! LikelyComplete BufDelete,VimLeavePre <buffer='. a:bufnr .'>'
+        exec 'autocmd LikelyComplete InsertLeave <buffer='. a:bufnr .'> call s:ResetLast()'
         exec 'autocmd LikelyComplete BufDelete <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(filetype) .','. string(expand('%:p')) .', 1)'
         exec 'autocmd LikelyComplete VimLeavePre <buffer='. a:bufnr .'> call s:UpdateWordList('. a:bufnr .','. string(filetype) .','. string(expand('%:p')) .', 0)'
     " endif
@@ -1133,11 +1134,13 @@ endf
 
 
 function s:AutoComplete()
+    " TLogVAR exists('b:likelycomplete_completefunc')
     if exists('b:likelycomplete_completefunc')
         let filetype = s:GetFiletype()
         let ft_options = s:FtOptions(filetype)
         let auto_complete = ft_options.Get('auto_complete')
         let start = likelycomplete#Complete(1, '')
+        " TLogVAR start col('.') auto_complete
         if start >= 0 && col('.') - start > auto_complete
             let s:auto_complete = 1
             call feedkeys("\<c-x>\<c-u>", 't') 
@@ -1146,7 +1149,14 @@ function s:AutoComplete()
 endf
 
 
-let s:last_failed = []
+function! s:ResetLast() "{{{3
+    let s:last_failed = []
+    let s:last_base = ''
+    let s:last_filetype = ''
+    let s:last_completions = []
+endf
+call s:ResetLast()
+
 
 function! likelycomplete#Complete(findstart, base) "{{{3
     " TLogVAR a:findstart, a:base
@@ -1225,12 +1235,9 @@ function! s:CompleteDone() "{{{3
 endf
 
 
-let s:last_base = ''
-let s:last_filetype = ''
-let s:last_completions = []
-
 function! s:GetSortedCompletions(filetype, base, insert_base, syntax) "{{{3
-    " TLogVAR 0, localtime()
+    " TLogVAR 0, localtime(), a:filetype, a:base, a:insert_base, a:syntax
+    " echom "DBG" s:last_filetype s:last_base
     let ft_options = s:FtOptions(a:filetype)
     let reuse = s:last_filetype == a:filetype && strpart(a:base, 0, len(s:last_base)) ==# s:last_base
     " TLogVAR reuse
