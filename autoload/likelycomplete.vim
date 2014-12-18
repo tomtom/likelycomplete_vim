@@ -1332,8 +1332,8 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
         elseif source == 'syntaxcomplete'
             if v:version >= 704 || exists('*syntaxcomplete#Complete')
                 let sc_col = syntaxcomplete#Complete(1, '')
-                let completions += syntaxcomplete#Complete(0, a:base)
-                " let completions += s:GoodCompletions(a:base, rx, syntaxcomplete#Complete(0, a:base))
+                " let completions += syntaxcomplete#Complete(0, a:base)
+                let completions += s:GoodCompletions(a:base, rx, syntaxcomplete#Complete(0, a:base))
             endif
         elseif source == 'tags'
             let completions += s:GoodCompletions(a:base, '', map(taglist(rx), 'v:val.name'))
@@ -1374,15 +1374,18 @@ endf
 
 
 function! s:GoodCompletions(base, rx, completions) "{{{3
+    " TLogVAR a:base, a:rx, len(a:completions)
     if empty(a:base)
         return a:completions
     endif
     let lbase = len(a:base)
     if empty(a:rx)
-        return filter(a:completions, 'len(v:val) > lbase')
+        let completions = filter(a:completions, 'len(v:val) > lbase')
     else
-        return filter(a:completions, 'len(v:val) > lbase && v:val =~ a:rx')
+        let completions = filter(a:completions, 'len(v:val) > lbase && v:val =~ a:rx')
     endif
+    " TLogVAR len(completions)
+    return completions
 endf
 
 
