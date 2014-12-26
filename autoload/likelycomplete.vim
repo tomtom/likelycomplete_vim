@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1542
+" @Revision:    1566
 
 scriptencoding utf-8
 
@@ -272,9 +272,25 @@ if !exists('g:likelycomplete#prgname')
 endif
 
 
+if !exists('g:likelycomplete#vimprg')
+    " If |g:likelycomplete#use_vimproc| is enabled, vim is used to 
+    " update the word-list. By default, we assume, vim is in $PATH.
+    let g:likelycomplete#vimprg = 'vim'   "{{{2
+endif
+
+
 if !exists('g:likelycomplete#run_async')
     " How to run |g:likelycomplete#prgname|.
     let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? (g:likelycomplete#prgname =~ '\c\<gvim\>' ? '!start %s >NUL' : '!start /min cmd /c %s >NUL') : '! ( %s >/dev/null ) &'   "{{{2
+endif
+
+
+if !exists('g:likelycomplete#use_vimproc')
+    " Use vimproc[1] in some situations (e.g. when updating the word 
+    " list).
+    "
+    " [1] https://github.com/Shougo/vimproc.vim
+    let g:likelycomplete#use_vimproc = exists('g:loaded_vimproc') && g:loaded_vimproc > 0   "{{{2
 endif
 
 
@@ -771,13 +787,27 @@ function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
     if index(ft_options.Get('sources'), 'likelycomplete') == -1
         return
     endif
-    if empty(g:likelycomplete#prgname) || empty(g:likelycomplete#run_async) || s:sfile == fnamemodify(a:filename, ':p')
-        call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
-    else
+    let runtype = 'now'
+    if s:sfile != fnamemodify(a:filename, ':p')
+        if g:likelycomplete#use_vimproc && a:allow_start_server && !empty('g:likelycomplete#vimprg')
+            let runtype = 'vimproc'
+        elseif !empty(g:likelycomplete#prgname) && !empty(g:likelycomplete#run_async)
+            let runtype = 'async'
+        endif
+    endif
+    if runtype == 'vimproc'
+        let expr = printf(':call likelycomplete#AsyncUpdateWordList(%s, %s, %s)<CR>',
+                    \ string(v:servername),
+                    \ string(a:filetype),
+                    \ string(fnameescape(a:filename)))
+        let cmd = printf('%s -c "%s" -c "qa!"', g:likelycomplete#vimprg, expr)
+        " TLogVAR cmd
+        call vimproc#system_bg(cmd)
+    elseif runtype == 'async'
         let servername = likelycomplete#EnsureServer(a:allow_start_server)
         " TLogVAR servername
         if empty(servername)
-            call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
+            let runtype == 'now'
         else
             if s:Getbufvar(a:bufnr, 'likelycomplete_done', 0)
                 return
@@ -790,6 +820,9 @@ function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
             call remote_send(servername, expr)
             call setbufvar(a:bufnr, 'likelycomplete_done', 1)
         endif
+    endif
+    if runtype == 'now'
+        call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
     endif
 endf
 

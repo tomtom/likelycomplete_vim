@@ -110,7 +110,9 @@ Contents~
         g:likelycomplete#base_context ............... |g:likelycomplete#base_context|
         g:likelycomplete#max_context ................ |g:likelycomplete#max_context|
         g:likelycomplete#prgname .................... |g:likelycomplete#prgname|
+        g:likelycomplete#vimprg ..................... |g:likelycomplete#vimprg|
         g:likelycomplete#run_async .................. |g:likelycomplete#run_async|
+        g:likelycomplete#use_vimproc ................ |g:likelycomplete#use_vimproc|
         g:likelycomplete#prg_init_exec .............. |g:likelycomplete#prg_init_exec|
         g:likelycomplete#max_wait ................... |g:likelycomplete#max_wait|
         g:likelycomplete#use_syntax ................. |g:likelycomplete#use_syntax|
@@ -427,9 +429,21 @@ g:likelycomplete#prgname       (default: g:likelycomplete#experimental >= 2 && h
     |+clientserver| support -- this is most likely true for the 
     Windows or GTK Version of GVIM.
 
+                                                    *g:likelycomplete#vimprg*
+g:likelycomplete#vimprg        (default: 'vim')
+    If |g:likelycomplete#use_vimproc| is enabled, vim is used to 
+    update the word-list. By default, we assume, vim is in $PATH.
+
                                                     *g:likelycomplete#run_async*
 g:likelycomplete#run_async     (default: has('win16') || has('win32') || has('win64') ? (g:likelycomplete#prgname =~ '\c\<gvim\>' ? '!start %s >NUL' : '!start /min cmd /c %s >NUL') : '! ( %s >/dev/null ) &')
     How to run |g:likelycomplete#prgname|.
+
+                                                    *g:likelycomplete#use_vimproc*
+g:likelycomplete#use_vimproc   (default: exists('g:loaded_vimproc') && g:loaded_vimproc > 0)
+    Use vimproc[1] in some situations (e.g. when updating the word 
+    list).
+
+    [1] https://github.com/Shougo/vimproc.vim
 
                                                     *g:likelycomplete#prg_init_exec*
 g:likelycomplete#prg_init_exec (default: 'set lines=10 ch=5 co='. &co)
