@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1566
+" @Revision:    1567
 
 scriptencoding utf-8
 
@@ -807,7 +807,7 @@ function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
         let servername = likelycomplete#EnsureServer(a:allow_start_server)
         " TLogVAR servername
         if empty(servername)
-            let runtype == 'now'
+            let runtype = 'now'
         else
             if s:Getbufvar(a:bufnr, 'likelycomplete_done', 0)
                 return
