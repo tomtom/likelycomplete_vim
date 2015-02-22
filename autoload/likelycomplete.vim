@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1567
+" @Revision:    1577
 
 scriptencoding utf-8
 
@@ -88,6 +88,7 @@ if !exists('g:likelycomplete#sources')
     "   dictionary .... Use dictionary files as defined in 
     "                   'dictionary'
     "   tags .......... Tags as returned by |taglist()|
+    "   snipMate ...... snipMate snippets
     "   g:{VAR} ....... A global variable
     "   b:{VAR} ....... A buffer-local variable
     "   w:{VAR} ....... A window-local variable
@@ -1375,6 +1376,8 @@ function! s:GetCompletions(filetype, base, ft_options) "{{{3
             let completions += s:GoodCompletions(a:base, '', map(taglist(rx), 'v:val.name'))
         elseif source == 'files'
             let completions += s:GoodCompletions(a:base, rx, glob('*'))
+        elseif source == 'snipMate' && !empty(maparg('<Plug>snipMateNextOrTrigger'))
+            let completions += snipMate#GetSnippetsForWordBelowCursorForComplete(a:base)
         elseif source =~# '^[gbw]:'
             if exists(source) && !empty(source)
                 exec 'let varval =' source

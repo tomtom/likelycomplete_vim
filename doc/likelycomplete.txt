@@ -311,6 +311,7 @@ g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionari
       dictionary .... Use dictionary files as defined in 
                       'dictionary'
       tags .......... Tags as returned by |taglist()|
+      snipMate ...... snipMate snippets
       g:{VAR} ....... A global variable
       b:{VAR} ....... A buffer-local variable
       w:{VAR} ....... A window-local variable
