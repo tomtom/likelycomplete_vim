@@ -1215,6 +1215,9 @@ function! likelycomplete#Complete(findstart, base) "{{{3
             return start
         endif
     elseif a:base =~ '\D'
+        if !exists('s:last_syntax')
+            let s:last_syntax = &filetype
+        endif
         try
             let rv = s:GetSortedCompletions(s:GetFiletype(), a:base, 1, s:last_syntax)
         catch
