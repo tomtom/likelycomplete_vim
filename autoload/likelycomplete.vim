@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1577
+" @Revision:    1579
 
 scriptencoding utf-8
 
@@ -1582,6 +1582,7 @@ function! s:AddRelevance(word, cfg) "{{{3
     if lword > 0 && lbase > 0
         let val = val * lbase / lword
     endif
+    " echom "DBG" string([val, a:word])
     return [val, a:word]
 endf
 
