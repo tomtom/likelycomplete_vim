@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1579
+" @Revision:    1580
 
 scriptencoding utf-8
 
@@ -1167,7 +1167,7 @@ function! likelycomplete#EscapeAutoComplete(map) "{{{3
 endf
 
 
-function s:AutoComplete()
+function! s:AutoComplete()
     " TLogVAR exists('b:likelycomplete_completefunc')
     if exists('b:likelycomplete_completefunc')
         let filetype = s:GetFiletype()
