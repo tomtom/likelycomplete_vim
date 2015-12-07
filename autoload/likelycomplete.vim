@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1580
+" @Revision:    1615
 
 scriptencoding utf-8
 
@@ -65,7 +65,16 @@ if !exists('g:likelycomplete#auto_complete')
     "
     " This option requires |g:likelycomplete#set_completefunc| to be 
     " true or |:Likelycompletemapcompletefunc| to be called.
-    let g:likelycomplete#auto_complete = g:likelycomplete#experimental >= 1 ? 2 : 0  "{{{2
+    let g:likelycomplete#auto_complete = g:likelycomplete#experimental >= 1 ? 3 : 0  "{{{2
+endif
+
+
+if !exists('g:likelycomplete#auto_complete_defs')
+    " :read: let g:likelycomplete#auto_complete_defs = {...}   "{{{2
+    let g:likelycomplete#auto_complete_defs = {
+                \ '*': {'blacklist_syntax_trans_rx': '^\CComment$'},
+                \ }
+
 endif
 
 
@@ -104,7 +113,7 @@ if !exists('g:likelycomplete#sources')
     "
     " This is only used in conjunction with |:Likelycompletemapselect| 
     " and |:Likelycompletemapcompletefunc|.
-    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries', 'tags', 'syntaxcomplete']   "{{{2
+    let g:likelycomplete#sources = ['likelycomplete', 'words', 'dictionaries', 'tags']   "{{{2
 endif
 
 
@@ -181,6 +190,7 @@ if !exists('g:likelycomplete#options')
     "   dictionaries ....... Override |g:likelycomplete#dictionaries|
     "   set_completefunc ... Override |g:likelycomplete#set_completefunc|
     "   auto_complete ...... Override |g:likelycomplete#auto_complete|
+    "   auto_complete_defs . Override |g:likelycomplete#auto_complete_defs|
     "   use_fuzzy_matches .. Override |g:likelycomplete#use_fuzzy_matches|
     "   use_completedone ... Override |g:likelycomplete#use_completedone|
     "   use_syntax ......... Override |g:likelycomplete#use_syntax|
@@ -589,7 +599,8 @@ function! s:SetupComplete(filetype) "{{{3
     endif
     if ft_options.Get('set_completefunc')
         call likelycomplete#SetComleteFunc()
-        if ft_options.Get('auto_complete')
+        let auto_complete_defs = ft_options.Get('auto_complete_defs')
+        if ft_options.Get('auto_complete') && (has_key(auto_complete_defs, a:filetype) || has_key(auto_complete_defs, '*'))
             autocmd! LikelyComplete CursorMovedI <buffer>
             autocmd LikelyComplete CursorMovedI <buffer> if !exists('b:likelycomplete_disable_auto_complete') && !pumvisible() | call s:AutoComplete() | endif
             imap <buffer> <silent> <c-g><c-u> <c-\><c-o>:call likelycomplete#EscapeAutoComplete('')<cr>
@@ -1173,11 +1184,31 @@ function! s:AutoComplete()
         let filetype = s:GetFiletype()
         let ft_options = s:FtOptions(filetype)
         let auto_complete = ft_options.Get('auto_complete')
-        let start = likelycomplete#Complete(1, '')
-        " TLogVAR start col('.') auto_complete
-        if start >= 0 && col('.') - start > auto_complete
-            let s:auto_complete = 1
-            call feedkeys("\<c-x>\<c-u>", 't') 
+        if auto_complete > 0
+            let auto_complete_defs = ft_options.Get('auto_complete_defs')
+            let ac_def = get(auto_complete_defs, filetype, get(auto_complete_defs, '*', {}))
+            let syntax = get(ac_def, 'blacklist_syntax_rx', '')
+            let col = col('.')
+            let col1 = col <= 1 ? col : col - 1
+            if !empty(syntax)
+                let stx = synIDattr(synID(line('.'), col1, 1), "name")
+                if stx =~ syntax
+                    return
+                endif
+            endif
+            let syntax_trans = get(ac_def, 'blacklist_syntax_trans_rx', '')
+            if !empty(syntax_trans)
+                let stx = synIDattr(synIDtrans(synID(line('.'), col1, 1)), "name")
+                if stx =~ syntax_trans
+                    return
+                endif
+            endif
+            let start = likelycomplete#Complete(1, '')
+            " TLogVAR start col('.') auto_complete
+            if start >= 0 && col - start > auto_complete
+                let s:auto_complete = 1
+                call feedkeys("\<c-x>\<c-u>", 't') 
+            endif
         endif
     endif
 endf
