@@ -1,23 +1,28 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1615
+" @Revision:    1633
 
 scriptencoding utf-8
 
 
-if !exists('g:loaded_tlib') || g:loaded_tlib < 107
+if !exists('g:loaded_tlib') || g:loaded_tlib < 119
     runtime plugin/02tlib.vim
-    if !exists('g:loaded_tlib') || g:loaded_tlib < 107
-        echoerr 'tlib >= 1.07 is required'
+    if !exists('g:loaded_tlib') || g:loaded_tlib < 119
+        echoerr 'tlib >= 1.19 is required'
         finish
     endif
 endif
 
 
 if !exists('g:likelycomplete#experimental')
-    " If 1, enable some experimental options.
-    " If 2, enable even more experimental options that are not 
-    " recommended for everyday use.
+    " If >= 1, enable some experimental options:
+    "   - |g:likelycomplete#set_completefunc|
+    "   - |g:likelycomplete#auto_complete|
+    " If >= 2, enable even more experimental options:
+    "   - |g:likelycomplete#prgname|
+    "   - |g:likelycomplete#use_syntax|
+    " If >= 3, enable even more experimental options that are slow:
+    "   - |g:likelycomplete#assess_context|
     "
     " Some of these experimental options may cause minor interruptions, 
     " delays, and increased memory usage.
@@ -232,7 +237,7 @@ if !exists('g:likelycomplete#assess_context')
     " CAUTION: This may cause a slow-down and increased memory use. This 
     " option only works properly if |g:likelycomplete#once_per_file| 
     " evaluates to false.
-    let g:likelycomplete#assess_context = g:likelycomplete#experimental >= 1 && !g:likelycomplete#once_per_file ? 5 : 0   "{{{2
+    let g:likelycomplete#assess_context = g:likelycomplete#experimental >= 3 && !g:likelycomplete#once_per_file ? 5 : 0   "{{{2
 endif
 
 
@@ -354,6 +359,7 @@ call likelycomplete#LoadData()
 
 
 function! s:SaveData() "{{{3
+    Tlibtrace 'likelycomplete', g:likelycomplete#data_cfile
     call tlib#persistent#Save(g:likelycomplete#data_cfile, s:likelycomplete_data)
 endf
 
@@ -650,6 +656,7 @@ endf
 
 
 function! likelycomplete#AsyncUpdateWordList(servername, filetype, filename) "{{{3
+    Tlibtrace 'likelycomplete', a:servername, a:filetype, a:filename
     let filetype = s:ValidFiletype(a:filetype)
     " set verbosefile=$HOME/tmp/lc.log
     " set verbose=12
@@ -795,6 +802,7 @@ endf
 let s:sfile = expand('<sfile>:p')
 
 function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
+    Tlibtrace 'likelycomplete', a:bufnr, a:filetype, a:filename, a:allow_start_server
     let ft_options = s:FtOptions(a:filetype)
     if index(ft_options.Get('sources'), 'likelycomplete') == -1
         return
@@ -833,6 +841,7 @@ function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
             call setbufvar(a:bufnr, 'likelycomplete_done', 1)
         endif
     endif
+    Tlibtrace 'likelycomplete', runtype
     if runtype == 'now'
         call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
     endif
@@ -965,6 +974,7 @@ endif
 
 
 function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
+    Tlibtrace 'likelycomplete', a:bufnr, a:filetype, a:filename
     if a:bufnr > 0 && s:Getbufvar(a:bufnr, 'likelycomplete_done', 0)
         return
     endif
@@ -976,10 +986,12 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
     let words = enriched_words.words
     let data = s:GetData(a:filetype)
     if !empty(words)
+        Tlibtrace 'likelycomplete', len(words)
         let wordds = {}
         for word in words
             let wordds[word] = 1
         endfor
+        Tlibtrace 'likelycomplete', len(wordds)
         let once_per_file = ft_options.Get('once_per_file')
         if once_per_file
             let words = keys(wordds)
@@ -987,6 +999,7 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
         else
             let assess_context = ft_options.Get('assess_context')
         endif
+        Tlibtrace 'likelycomplete', once_per_file
         for word in words
             if has_key(data, word)
                 let worddef = data[word]
@@ -1005,11 +1018,13 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
             let data[word] = worddef
         endfor
         if has_key(enriched_words, 'syntax')
+            Tlibtrace 'likelycomplete', len(data)
             for [word, syns] in items(enriched_words.syntax)
                 let data[word].syntax = extend(get(data[word], 'syntax', {}), syns)
             endfor
         endif
         if assess_context > 0
+            Tlibtrace 'likelycomplete', assess_context
             let context_words = []
             let iword = 0
             for word in words
@@ -1022,7 +1037,9 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
                 endif
             endfor
         endif
-        for word in filter(keys(data), '!has_key(wordds, v:val)')
+        let data_words = filter(keys(data), '!has_key(wordds, v:val)')
+        Tlibtrace 'likelycomplete', len(data_words)
+        for word in data_words
             let worddef = data[word]
             let n = get(worddef, 'n', g:likelycomplete#base)
             if n < g:likelycomplete#max
@@ -1034,6 +1051,7 @@ function! s:UpdateWordListNow(bufnr, filetype, filename) "{{{3
                 endif
             endif
         endfor
+        Tlibtrace 'likelycomplete', len(data), a:filetype
         call s:SetData(a:filetype, data)
         if !s:WriteWordList(a:filetype)
             call s:SaveData()
