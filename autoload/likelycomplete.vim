@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1633
+" @Revision:    1634
 
 scriptencoding utf-8
 
@@ -843,7 +843,11 @@ function! s:UpdateWordList(bufnr, filetype, filename, allow_start_server) "{{{3
     endif
     Tlibtrace 'likelycomplete', runtype
     if runtype == 'now'
-        call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
+        if v:version >= 800
+            call timer_start(500, {t -> s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)})
+        else
+            call s:UpdateWordListNow(a:bufnr, a:filetype, a:filename)
+        endif
     endif
 endf
 
