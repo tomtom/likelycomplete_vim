@@ -78,16 +78,10 @@ Contents~
 
         g:likelycomplete_filetypes .................. |g:likelycomplete_filetypes|
         g:likelycomplete_per_window ................. |g:likelycomplete_per_window|
-        LikelycompleteSetupFiletype ................. |LikelycompleteSetupFiletype()|
         :Likelycomplete ............................. |:Likelycomplete|
         :Likelycompleteremovewords .................. |:Likelycompleteremovewords|
         :Likelycompletemapcompletefunc .............. |:Likelycompletemapcompletefunc|
         :Likelycompletemapselect .................... |:Likelycompletemapselect|
-        :Likelycompleteupdate ....................... |:Likelycompleteupdate|
-        g:likelycomplete#ft#vim#options ............. |g:likelycomplete#ft#vim#options|
-        likelycomplete#ft#vim#Init .................. |likelycomplete#ft#vim#Init()|
-        g:likelycomplete#ft#javascript#options ...... |g:likelycomplete#ft#javascript#options|
-        likelycomplete#ft#javascript#Init ........... |likelycomplete#ft#javascript#Init()|
         g:likelycomplete#experimental ............... |g:likelycomplete#experimental|
         g:likelycomplete#list_set_filter ............ |g:likelycomplete#list_set_filter|
         g:likelycomplete#select_imap ................ |g:likelycomplete#select_imap|
@@ -99,7 +93,6 @@ Contents~
         g:likelycomplete#use_fuzzy_matches .......... |g:likelycomplete#use_fuzzy_matches|
         g:likelycomplete#use_completedone ........... |g:likelycomplete#use_completedone|
         g:likelycomplete#list_picker ................ |g:likelycomplete#list_picker|
-        g:likelycomplete#data_cfile ................. |g:likelycomplete#data_cfile|
         g:likelycomplete#maxsize .................... |g:likelycomplete#maxsize|
         g:likelycomplete#word_minlength ............. |g:likelycomplete#word_minlength|
         g:likelycomplete#once_per_file .............. |g:likelycomplete#once_per_file|
@@ -114,36 +107,13 @@ Contents~
         g:likelycomplete#run_async .................. |g:likelycomplete#run_async|
         g:likelycomplete#use_vimproc ................ |g:likelycomplete#use_vimproc|
         g:likelycomplete#prg_init_exec .............. |g:likelycomplete#prg_init_exec|
-        g:likelycomplete#max_wait ................... |g:likelycomplete#max_wait|
         g:likelycomplete#use_syntax ................. |g:likelycomplete#use_syntax|
-        g:likelycomplete#ignore_syntax_rx ........... |g:likelycomplete#ignore_syntax_rx|
-        g:likelycomplete#debug ...................... |g:likelycomplete#debug|
-        likelycomplete#LoadData ..................... |likelycomplete#LoadData()|
-        likelycomplete#GetOption .................... |likelycomplete#GetOption()|
-        likelycomplete#String2Args .................. |likelycomplete#String2Args()|
-        likelycomplete#SetupFiletype ................ |likelycomplete#SetupFiletype()|
-        likelycomplete#SetupBuffer .................. |likelycomplete#SetupBuffer()|
-        likelycomplete#RemoveFiletype ............... |likelycomplete#RemoveFiletype()|
-        i_<c-g><c-u> ................................ |i_<c-g><c-u>|
-        likelycomplete#Tokenize ..................... |likelycomplete#Tokenize()|
-        likelycomplete#AsyncUpdateWordList .......... |likelycomplete#AsyncUpdateWordList()|
-        likelycomplete#EnsureServer ................. |likelycomplete#EnsureServer()|
-        likelycomplete#Handshake .................... |likelycomplete#Handshake()|
-        likelycomplete#InitServer ................... |likelycomplete#InitServer()|
-        likelycomplete#RegisterClient ............... |likelycomplete#RegisterClient()|
-        likelycomplete#ExitServer ................... |likelycomplete#ExitServer()|
-        likelycomplete#ListPicker_tlib .............. |likelycomplete#ListPicker_tlib()|
-        likelycomplete#RemoveWords .................. |likelycomplete#RemoveWords()|
-        likelycomplete#MapSelectWord ................ |likelycomplete#MapSelectWord()|
-        likelycomplete#SelectWord ................... |likelycomplete#SelectWord()|
-        likelycomplete#SetComleteFunc ............... |likelycomplete#SetComleteFunc()|
-        likelycomplete#EscapeAutoComplete ........... |likelycomplete#EscapeAutoComplete()|
-        likelycomplete#Complete ..................... |likelycomplete#Complete()|
+        g:likelycomplete#ft#javascript#options ...... |g:likelycomplete#ft#javascript#options|
+        g:likelycomplete#ft#vim#options ............. |g:likelycomplete#ft#vim#options|
 
 
-========================================================================
-plugin/likelycomplete.vim~
-
+------------------------------------------------------------------------
+                                                    *plugin/likelycomplete.vim*
                                                     *g:likelycomplete_filetypes*
 g:likelycomplete_filetypes     (default: [])
     A list of filetypes for which LikelyComplete is automatically 
@@ -182,9 +152,6 @@ g:likelycomplete_per_window    (default: 0)
     NOTE: This variable should not be changed once the plugin was 
     loaded.
 
-                                                    *LikelycompleteSetupFiletype()*
-LikelycompleteSetupFiletype(filetype)
-
                                                     *:Likelycomplete*
 :Likelycomplete [NAME=VALUE ...]
     Enable LikelyComplete for the current buffer.
@@ -212,45 +179,19 @@ LikelycompleteSetupFiletype(filetype)
     See |tlib#input#List()| for details on how to use the list picker.
     See also |g:likelycomplete#use_omnifunc| and |g:likelycomplete#select_imap|.
 
-                                                    *:Likelycompleteupdate*
-:Likelycompleteupdate
 
-
-========================================================================
-autoload/likelycomplete/ft/vim.vim~
-
-                                                    *g:likelycomplete#ft#vim#options*
-g:likelycomplete#ft#vim#options (default: {...})
-    Some custom options for the vim filetype (see 
-    |g:likelycomplete#options|).
-    Anything following a single or double quote is removed. This will 
-    make sure that all strings an comments are removed -- at the cost 
-    of also removing eligible identifiers following a string.
-
-                                                    *likelycomplete#ft#vim#Init()*
-likelycomplete#ft#vim#Init()
-
-
-========================================================================
-autoload/likelycomplete/ft/javascript.vim~
-
-                                                    *g:likelycomplete#ft#javascript#options*
-g:likelycomplete#ft#javascript#options (default: {...})
-    Some custom options for javascript (see 
-    |g:likelycomplete#options|).
-
-                                                    *likelycomplete#ft#javascript#Init()*
-likelycomplete#ft#javascript#Init()
-
-
-========================================================================
-autoload/likelycomplete.vim~
-
+------------------------------------------------------------------------
+                                                    *autoload/likelycomplete.vim*
                                                     *g:likelycomplete#experimental*
 g:likelycomplete#experimental  (default: 0)
-    If 1, enable some experimental options.
-    If 2, enable even more experimental options that are not 
-    recommended for everyday use.
+    If >= 1, enable some experimental options:
+      - |g:likelycomplete#set_completefunc|
+      - |g:likelycomplete#auto_complete|
+    If >= 2, enable even more experimental options:
+      - |g:likelycomplete#prgname|
+      - |g:likelycomplete#use_syntax|
+    If >= 3, enable even more experimental options that are slow:
+      - |g:likelycomplete#assess_context|
 
     Some of these experimental options may cause minor interruptions, 
     delays, and increased memory usage.
@@ -277,7 +218,7 @@ g:likelycomplete#set_completefunc (default: g:likelycomplete#experimental >= 1)
     See also |:Likelycompletemapcompletefunc|.
 
                                                     *g:likelycomplete#auto_complete*
-g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 : 0)
+g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 3 : 0)
     The number of characters after which auto-completion should be 
     invoked. If 0, auto-completion is disabled.
 
@@ -292,7 +233,7 @@ g:likelycomplete#auto_complete (default: g:likelycomplete#experimental >= 1 ? 2 
     true or |:Likelycompletemapcompletefunc| to be called.
 
                                                     *g:likelycomplete#sources*
-g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries', 'tags', 'syntaxcomplete'])
+g:likelycomplete#sources       (default: ['likelycomplete', 'words', 'dictionaries', 'tags'])
     A list of sources that will be used for compiling the list of 
     possible completions.
 
@@ -368,9 +309,6 @@ g:likelycomplete#list_picker   (default: 'tlib')
       base .... A string that should be selected (may be ignored; see 
                 also |g:likelycomplete#list_set_filter|)
 
-                                                    *g:likelycomplete#data_cfile*
-g:likelycomplete#data_cfile    (default: tlib#persistent#Filename('likelycomplete', 'data', 1))
-
                                                     *g:likelycomplete#maxsize*
 g:likelycomplete#maxsize       (default: 5000)
     The maximum number of words kept per filetype.
@@ -385,7 +323,7 @@ g:likelycomplete#once_per_file (default: 0)
     of word X in a buffer will be counted as N times.
 
                                                     *g:likelycomplete#assess_context*
-g:likelycomplete#assess_context (default: g:likelycomplete#experimental >= 1 && !g:likelycomplete#once_per_file ? 5 : 0)
+g:likelycomplete#assess_context (default: g:likelycomplete#experimental >= 3 && !g:likelycomplete#once_per_file ? 5 : 0)
     The number of preceding words that should be taken into account 
     when sorting the list of possible completions.
     This is only used in conjunction with |:Likelycompletemapselect| 
@@ -451,9 +389,6 @@ g:likelycomplete#prg_init_exec (default: 'set lines=10 ch=5 co='. &co)
     An |:exec| command that is run after starting 
     |g:likelycomplete#prgname|.
 
-                                                    *g:likelycomplete#max_wait*
-g:likelycomplete#max_wait      (default: 5000)
-
                                                     *g:likelycomplete#use_syntax*
 g:likelycomplete#use_syntax    (default: g:likelycomplete#experimental >= 2 && !empty(g:likelycomplete#run_async) && !empty(g:likelycomplete#prgname))
     If > 0, use information about syntax groups for ranking 
@@ -469,74 +404,24 @@ g:likelycomplete#use_syntax    (default: g:likelycomplete#experimental >= 2 && !
     updates via |g:likelycomplete#prgname| and 
     |g:likelycomplete#run_async|.
 
-                                                    *g:likelycomplete#ignore_syntax_rx*
-g:likelycomplete#ignore_syntax_rx (default: '\%(Comment\|NonText\|String\)')
 
-                                                    *g:likelycomplete#debug*
-g:likelycomplete#debug         (default: 0)
+------------------------------------------------------------------------
+                                                    *autoload/likelycomplete/ft/javascript.vim*
+                                                    *g:likelycomplete#ft#javascript#options*
+g:likelycomplete#ft#javascript#options (default: {...})
+    Some custom options for javascript (see 
+    |g:likelycomplete#options|).
 
-                                                    *likelycomplete#LoadData()*
-likelycomplete#LoadData()
 
-                                                    *likelycomplete#GetOption()*
-likelycomplete#GetOption(name, ...)
-
-                                                    *likelycomplete#String2Args()*
-likelycomplete#String2Args(string)
-
-                                                    *likelycomplete#SetupFiletype()*
-likelycomplete#SetupFiletype(filetype, options)
-
-                                                    *likelycomplete#SetupBuffer()*
-likelycomplete#SetupBuffer(filetype, bufnr)
-
-                                                    *likelycomplete#RemoveFiletype()*
-likelycomplete#RemoveFiletype(filetype)
-
-                                                    *i_<c-g><c-u>*
-i_<c-g><c-u> ... <c-\><c-o>:call likelycomplete#EscapeAutoComplete('')<cr>
-
-                                                    *likelycomplete#Tokenize()*
-likelycomplete#Tokenize(text, ...)
-
-                                                    *likelycomplete#AsyncUpdateWordList()*
-likelycomplete#AsyncUpdateWordList(servername, filetype, filename)
-
-                                                    *likelycomplete#EnsureServer()*
-likelycomplete#EnsureServer(allow_start_server)
-
-                                                    *likelycomplete#Handshake()*
-likelycomplete#Handshake(servername)
-
-                                                    *likelycomplete#InitServer()*
-likelycomplete#InitServer(servername)
-
-                                                    *likelycomplete#RegisterClient()*
-likelycomplete#RegisterClient(clientname)
-
-                                                    *likelycomplete#ExitServer()*
-likelycomplete#ExitServer(clientname)
-
-                                                    *likelycomplete#ListPicker_tlib()*
-likelycomplete#ListPicker_tlib(type, prompt, list, base)
-
-                                                    *likelycomplete#RemoveWords()*
-likelycomplete#RemoveWords(...)
-
-                                                    *likelycomplete#MapSelectWord()*
-likelycomplete#MapSelectWord(imap)
-
-                                                    *likelycomplete#SelectWord()*
-likelycomplete#SelectWord(base)
-
-                                                    *likelycomplete#SetComleteFunc()*
-likelycomplete#SetComleteFunc()
-
-                                                    *likelycomplete#EscapeAutoComplete()*
-likelycomplete#EscapeAutoComplete(map)
-
-                                                    *likelycomplete#Complete()*
-likelycomplete#Complete(findstart, base)
+------------------------------------------------------------------------
+                                                    *autoload/likelycomplete/ft/vim.vim*
+                                                    *g:likelycomplete#ft#vim#options*
+g:likelycomplete#ft#vim#options (default: {...})
+    Some custom options for the vim filetype (see 
+    |g:likelycomplete#options|).
+    Anything following a single or double quote is removed. This will 
+    make sure that all strings an comments are removed -- at the cost 
+    of also removing eligible identifiers following a string.
 
 
 
