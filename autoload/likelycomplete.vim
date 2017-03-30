@@ -344,6 +344,11 @@ if !exists('g:likelycomplete#ignore_syntax_rx')
 endif
 
 
+if !exists('g:likelycomplete#use_encoding')
+    let g:likelycomplete#use_encoding = &enc   "{{{2
+endif
+
+
 if !exists('g:likelycomplete#debug')
     let g:likelycomplete#debug = 0   "{{{2
 endif
@@ -632,13 +637,16 @@ if g:likelycomplete#debug
     function! likelycomplete#Tokenize(text, ...) "{{{3
         let filetype = a:0 >= 1 ? a:1 : &ft
         let ft_options = s:FtOptions(filetype)
-        return s:Tokenize(ft_options, a:text)
+        return s:Tokenize(ft_options, a:text, &l:fenc)
     endf
 endif
 
 
-function! s:Tokenize(ft_options, text) "{{{3
+function! s:Tokenize(ft_options, text, fenc) "{{{3
     let text = a:text
+    if has('iconv') && !empty(g:likelycomplete#use_encoding) && a:fenc !=? g:likelycomplete#use_encoding
+        let text = iconv(text, a:fenc, g:likelycomplete#use_encoding)
+    endif
     if a:ft_options.Get('strip_multiline_strings', 1)
         let text = s:RemoveStrings(a:ft_options, text)
     endif
@@ -952,7 +960,7 @@ function! s:GetBufferWords(bufnr, filetype, filename, ft_options) "{{{3
         endif
         let lines = filter(lines, 'v:val !~ cms_rx')
     endif
-    let words = s:Tokenize(a:ft_options, join(lines))
+    let words = s:Tokenize(a:ft_options, join(lines), getbufvar(a:bufnr, '&fenc'))
     let word_minlength = a:ft_options.Get('word_minlength')
     let words = filter(words, '!empty(v:val) && strwidth(v:val) >= word_minlength')
     if a:ft_options.Get('strip_numbers', 1)
@@ -1551,7 +1559,7 @@ function! s:GetWordsSortedByRelevance(filetype, base, ft_options, words, coption
                 \ 'base_rx': escape(a:base, '\'),
                 \ 'bbase_rx': '\V\^'. escape(a:base, '\'),
                 \ 'base_parts': use_fuzzy ? items(s:GetWordParts(a:ft_options, a:base)) : [],
-                \ 'words': s:Tokenize(a:ft_options, join(context_lines)),
+                \ 'words': s:Tokenize(a:ft_options, join(context_lines), &l:fenc),
                 \ 'match_beginning': a:ft_options.Get('match_beginning'),
                 \ 'use_fuzzy': use_fuzzy,
                 \ 'use_syntax': a:ft_options.Get('use_syntax'),
