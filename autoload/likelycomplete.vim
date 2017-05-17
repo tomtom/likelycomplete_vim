@@ -1,6 +1,6 @@
 " @Author:      Tom Link (mailto:micathom AT gmail com?subject=[vim])
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
-" @Revision:    1634
+" @Revision:    1646
 
 scriptencoding utf-8
 
@@ -297,7 +297,7 @@ endif
 
 if !exists('g:likelycomplete#run_async')
     " How to run |g:likelycomplete#prgname|.
-    let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? (g:likelycomplete#prgname =~ '\c\<gvim\>' ? '!start %s >NUL' : '!start /min cmd /c %s >NUL') : '! ( %s >/dev/null ) &'   "{{{2
+    let g:likelycomplete#run_async = has('win16') || has('win32') || has('win64') ? (g:likelycomplete#prgname =~? '\c\<gvim\>' ? '!start %s' : '!start /min cmd /c %s') : '! ( %s > /dev/null ) &'   "{{{2
 endif
 
 
